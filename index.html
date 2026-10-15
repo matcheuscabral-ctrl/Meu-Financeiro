@@ -259,20 +259,6 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 .settings-row input{width:118px; text-align:right; border:1px solid var(--line2); background:var(--surface2); color:var(--text); border-radius:10px; padding:9px 10px; font-size:15px; font-family:inherit;}
 .sign-btn{border-color:var(--line2) !important;}
 
-
-.od-file{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
-.od-file .ic{width:38px; height:38px; border-radius:11px; background:#1D6F42; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex:none;}
-.od-file .nm{font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.od-file .st{font-size:12.5px; color:var(--faint); margin-top:2px;}
-.od-file .st.err{color:var(--red);}
-.od-links{display:flex; justify-content:center; gap:22px; margin-top:4px;}
-.od-links button{background:none; border:none; color:var(--mut); font-family:inherit; font-size:13.5px; padding:6px 0;}
-.od-pick{display:flex; flex-direction:column; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:13px 2px; color:var(--text); font-family:inherit; font-size:15px;}
-.od-pick small{color:var(--faint); font-size:12.5px; margin-top:2px;}
-.od-uri{display:flex; gap:8px; align-items:center; background:var(--surface2); border:1px solid var(--line2); border-radius:12px; padding:10px 12px; font-size:12.5px; word-break:break-all; color:var(--text);}
-.od-uri button{flex:none; background:var(--champ); color:var(--champ-ink); border:none; border-radius:8px; padding:7px 10px; font-family:inherit; font-size:12.5px; font-weight:600;}
-.od-steps{margin:0 0 14px; padding-left:20px; color:var(--mut); font-size:13.5px; line-height:1.6;}
-.od-steps b{color:var(--text); font-weight:500;}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -364,10 +350,7 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
       </div>
       <div class="content">
 
-        <div class="section-title" style="margin-top:18px;">Planilha no OneDrive</div>
-        <div class="card" id="odCard"></div>
-
-        <div class="section-title">Enviar para a planilha</div>
+        <div class="section-title" style="margin-top:18px;">Enviar para a planilha</div>
         <div class="export-summary">
           <div class="box"><div class="n num" id="expCount">0</div><div class="l">Lançamentos pendentes</div></div>
           <div class="box"><div class="n num" id="expSaldo">R$ 0</div><div class="l">Saldo pendente</div></div>
@@ -378,7 +361,7 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
         <button class="btn btn-secondary" id="btnBaixar">Baixar arquivo .csv</button>
         <p class="hint">Na aba EXTRATO, clique na primeira célula vazia da coluna DATA e cole. Data, Mês, Categoria, Descrição, Banco, Valor e Tipo entram na ordem certa; a coluna PAI fica em branco. Depois volte aqui e toque em “Já colei na planilha”.</p>
 
-        <div class="section-title">Atualizar com um arquivo</div>
+        <div class="section-title">Atualizar com a planilha</div>
         <div class="card">
           <p style="font-size:13.5px; color:var(--mut); margin:0 0 14px; line-height:1.55;">
             Escolha o arquivo .xlsx da planilha. O app copia os saldos das contas e os totais do mês exatamente como estão nas células, e traz da aba <b style="color:var(--text); font-weight:500;">EXTRATO</b> só os lançamentos que ainda não tem.
@@ -425,7 +408,6 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 <div id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
 <script>
 /* ============ ARMAZENAMENTO ============
    Dentro do Claude, window.storage já existe e salva na nuvem.
@@ -671,11 +653,7 @@ function renderPainel(){
 
   const sourceNoteEl = document.getElementById('sourceNote');
   if(sourceNoteEl){
-    const odi = (typeof odInfo==='function' && odItem()) ? odInfo() : null;
-    if(odi && odi.syncedAt){
-      sourceNoteEl.textContent = `Atualizado do OneDrive ${hhmm(odi.syncedAt)}. Os lançamentos feitos no app depois disso já estão somados.`;
-      sourceNoteEl.style.display = 'block';
-    } else if(state.controleSnapshot){
+    if(state.controleSnapshot){
       const at = fmtSnapshotDate(state.controleSnapshot.importedAt);
       sourceNoteEl.textContent = `Planilha importada em ${at}${fromSnapshot ? '' : ' (este mês não está na planilha; totais calculados pelo app)'}. Os lançamentos feitos no app depois disso já estão somados.`;
       sourceNoteEl.style.display = 'block';
@@ -767,7 +745,7 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
       </div>`;
     }).join('')}</div>
     <div class="sheet-actions"><button class="btn btn-primary" id="btnSalvarSaldos" style="margin-top:14px;">Salvar</button></div>
-    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · OneDrive</p>`;
+    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · claro e escuro</p>`;
   document.getElementById('overlay').classList.add('show');
   document.querySelectorAll('.sign-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -1109,41 +1087,6 @@ function applyCarteirasFromSnapshot(snap){
   return Object.keys(snap.carteiras).length>0;
 }
 
-function parseWorkbookBuffer(buf){
-  const wb = XLSX.read(buf, {type:'array', cellDates:true});
-  const sheetName = wb.SheetNames.find(n=>n.toLowerCase().includes('extrato')) || wb.SheetNames[0];
-  const ws = wb.Sheets[sheetName];
-  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
-  const rows = rowsFromAOA(aoa);
-  const anoFromRows = rows.length ? (()=>{ const counts={}; rows.forEach(r=>{ const y=r.date.slice(0,4); counts[y]=(counts[y]||0)+1; }); return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; })() : null;
-  const snapshot = extractControleSnapshot(wb, anoFromRows ? parseInt(anoFromRows,10) : null);
-  return {rows, snapshot};
-}
-// separa: linhas realmente novas VS linhas que já existem no app como pendentes (já coladas na planilha)
-function diffImport(rows){
-  const byFingerprint = new Map();
-  state.lancamentos.forEach(l => byFingerprint.set(fingerprint(l), l));
-  const novos = [];
-  const reconciledIds = new Set();
-  rows.forEach(r=>{
-    const match = byFingerprint.get(fingerprint(r));
-    if(!match) novos.push(r);
-    else if(match.synced!==true) reconciledIds.add(match.id);
-  });
-  return {novos, reconciledIds};
-}
-async function applyImport(novos, reconciledIds, snapshot){
-  novos.forEach(r=>{
-    state.lancamentos.push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,7), date:r.date, tipo:r.tipo, categoria:r.categoria, banco:r.banco||BANCOS[0], descricao:r.descricao, valor:r.valor, synced:true, source:'import' });
-  });
-  if(reconciledIds.size>0){
-    if(!(snapshot && snapshot.carteiras)) foldIntoBase(state.lancamentos.filter(l=>reconciledIds.has(l.id)));
-    state.lancamentos.forEach(l=>{ if(reconciledIds.has(l.id)) l.synced = true; });
-  }
-  await persistSaldos();
-  await persistLancamentos();
-  if(snapshot){ state.controleSnapshot = snapshot; if(applyCarteirasFromSnapshot(snapshot)) await persistSaldos(); await persistSnapshots(); }
-}
 async function handleImportFile(file){
   const statusEl = document.getElementById('importStatus');
   statusEl.textContent = 'Lendo arquivo...';
@@ -1154,8 +1097,14 @@ async function handleImportFile(file){
       const text = await file.text();
       rows = parseCSVText(text);
     } else {
-      const parsed = parseWorkbookBuffer(await file.arrayBuffer());
-      rows = parsed.rows; snapshot = parsed.snapshot;
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array', cellDates:true});
+      const sheetName = wb.SheetNames.find(n=>n.toLowerCase().includes('extrato')) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+      rows = rowsFromAOA(aoa);
+      const anoFromRows = rows.length ? (()=>{ const counts={}; rows.forEach(r=>{ const y=r.date.slice(0,4); counts[y]=(counts[y]||0)+1; }); return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; })() : null;
+      snapshot = extractControleSnapshot(wb, anoFromRows ? parseInt(anoFromRows,10) : null);
     }
     pendingSnapshot = snapshot;
     if(!rows.length && !snapshot){
@@ -1165,7 +1114,16 @@ async function handleImportFile(file){
     // separa em: linhas realmente novas VS linhas que já existem no app mas ainda estão
     // marcadas como pendentes (provavelmente porque você colou na planilha e esqueceu de
     // marcar como enviado) — essas precisam ser "reconciliadas" para não contar em dobro.
-    const {novos, reconciledIds} = diffImport(rows);
+    const byFingerprint = new Map();
+    state.lancamentos.forEach(l => byFingerprint.set(fingerprint(l), l));
+    const novos = [];
+    const reconciledIds = new Set();
+    rows.forEach(r=>{
+      const fp = fingerprint(r);
+      const match = byFingerprint.get(fp);
+      if(!match) novos.push(r);
+      else if(match.synced!==true) reconciledIds.add(match.id);
+    });
     showImportConfirm(rows.length, novos, reconciledIds);
     statusEl.textContent = '';
   }catch(err){
@@ -1208,7 +1166,16 @@ function showImportConfirm(totalLidos, novos, reconciledIds){
   document.getElementById('overlay').classList.add('show');
   document.getElementById('btnCancelImport').addEventListener('click', closeSheet);
   document.getElementById('btnConfirmImport').addEventListener('click', async ()=>{
-    await applyImport(novos, reconciledIds, pendingSnapshot);
+    novos.forEach(r=>{
+      state.lancamentos.push({ id: Date.now().toString(36)+Math.random().toString(36).slice(2,7), date:r.date, tipo:r.tipo, categoria:r.categoria, banco:r.banco||BANCOS[0], descricao:r.descricao, valor:r.valor, synced:true, source:'import' });
+    });
+    if(reconciledIds.size>0){
+      if(!(pendingSnapshot && pendingSnapshot.carteiras)) foldIntoBase(state.lancamentos.filter(l=>reconciledIds.has(l.id)));
+      state.lancamentos.forEach(l=>{ if(reconciledIds.has(l.id)) l.synced = true; });
+    }
+    await persistSaldos();
+    await persistLancamentos();
+    if(pendingSnapshot){ state.controleSnapshot = pendingSnapshot; if(applyCarteirasFromSnapshot(pendingSnapshot)) await persistSaldos(); await persistSnapshots(); }
     closeSheet();
     renderPainel(); renderHistorico(); renderExportar();
     const parts = [];
@@ -1264,190 +1231,6 @@ function showMigrationSetup(){
   });
 }
 
-
-/* ============ ONEDRIVE: a planilha atualiza o app sozinha ============ */
-const OD = { scopes:['Files.Read'], app:null, busy:false, lastTry:0, needLogin:false, err:'' };
-function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
-function lsSet(k,v){ try{ if(v===null||v===undefined) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
-function odClientId(){ return (lsGet('od_client_id')||'').trim(); }
-function odItem(){ try{ return JSON.parse(lsGet('od_item')||'null'); }catch(e){ return null; } }
-function odInfo(){ try{ return JSON.parse(lsGet('od_info')||'null'); }catch(e){ return null; } }
-function odRedirectUri(){ return location.origin + location.pathname; }
-function odAccount(){ return OD.app ? (OD.app.getActiveAccount() || OD.app.getAllAccounts()[0] || null) : null; }
-function hhmm(iso){ if(!iso) return ''; const d=new Date(iso); const hoje = d.toDateString()===new Date().toDateString(); return (hoje?'hoje':d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}))+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-
-async function odBoot(){
-  const cid = odClientId();
-  if(!cid || !window.msal || location.protocol==='file:'){ renderOdCard(); return; }
-  try{
-    OD.app = new msal.PublicClientApplication({
-      auth:{ clientId:cid, authority:'https://login.microsoftonline.com/consumers', redirectUri:odRedirectUri(), navigateToLoginRequestUrl:false },
-      cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:false }
-    });
-    await OD.app.initialize();
-    const res = await OD.app.handleRedirectPromise();
-    if(res && res.account) OD.app.setActiveAccount(res.account);
-    else if(OD.app.getAllAccounts().length) OD.app.setActiveAccount(OD.app.getAllAccounts()[0]);
-  }catch(e){ console.log(e); OD.err = 'Não foi possível iniciar o login da Microsoft. Confira o código do app (Client ID).'; }
-  renderOdCard();
-  if(odAccount() && !odItem() && lsGet('od_pick_after_login')){ lsSet('od_pick_after_login',null); odPickFile(); return; }
-  if(odAccount() && odItem()) odSync({auto:true});
-}
-async function odToken(interactive){
-  if(!OD.app) return null;
-  const acc = odAccount();
-  if(!acc){ if(interactive){ lsSet('od_pick_after_login','1'); await OD.app.loginRedirect({scopes:OD.scopes, prompt:'select_account'}); } return null; }
-  try{
-    const r = await OD.app.acquireTokenSilent({scopes:OD.scopes, account:acc});
-    OD.needLogin = false; return r.accessToken;
-  }catch(e){
-    OD.needLogin = true;
-    if(interactive) await OD.app.acquireTokenRedirect({scopes:OD.scopes, account:acc});
-    return null;
-  }
-}
-async function graphGet(path, token){
-  const r = await fetch('https://graph.microsoft.com/v1.0'+path, {headers:{Authorization:'Bearer '+token}});
-  if(!r.ok) throw new Error('Graph '+r.status);
-  return r.json();
-}
-async function odDownload(item, token){
-  const meta = await graphGet('/me/drive/items/'+encodeURIComponent(item.id), token);
-  let buf = null;
-  const url = meta['@microsoft.graph.downloadUrl'];
-  if(url){ try{ const r = await fetch(url); if(r.ok) buf = await r.arrayBuffer(); }catch(e){} }
-  if(!buf){
-    const r = await fetch('https://graph.microsoft.com/v1.0/me/drive/items/'+encodeURIComponent(item.id)+'/content', {headers:{Authorization:'Bearer '+token}});
-    if(!r.ok) throw new Error('Download '+r.status);
-    buf = await r.arrayBuffer();
-  }
-  return {meta, buf};
-}
-async function odSync(opts){
-  opts = opts || {};
-  const item = odItem(); if(!item || OD.busy) return;
-  OD.busy = true; OD.lastTry = Date.now(); OD.err = ''; renderOdCard('Atualizando…');
-  try{
-    const token = await odToken(!!opts.interactive);
-    if(!token){ OD.busy=false; renderOdCard(); return; }
-    const {meta, buf} = await odDownload(item, token);
-    const {rows, snapshot} = parseWorkbookBuffer(buf);
-    if(!rows.length && !snapshot) throw new Error('vazio');
-    const {novos, reconciledIds} = diffImport(rows);
-    await applyImport(novos, reconciledIds, snapshot);
-    lsSet('od_info', JSON.stringify({ syncedAt:new Date().toISOString(), savedAt:meta.lastModifiedDateTime||null, name:meta.name||item.name }));
-    renderPainel(); renderHistorico(); renderExportar();
-    if(novos.length || reconciledIds.size || !opts.auto){
-      const parts=[]; if(novos.length) parts.push(novos.length+' lançamento(s) novo(s)'); if(reconciledIds.size) parts.push(reconciledIds.size+' marcado(s) como na planilha');
-      showToast('Planilha atualizada' + (parts.length ? ': '+parts.join(', ') : ''));
-    }
-  }catch(e){
-    console.log(e);
-    OD.err = /Graph 404/.test(e.message) ? 'Não encontramos mais essa planilha no OneDrive. Escolha de novo.' :
-             /vazio/.test(e.message) ? 'A planilha não tem a aba EXTRATO ou CONTROLE no formato esperado.' :
-             'Não foi possível atualizar agora. Confira a internet e tente de novo.';
-  }
-  OD.busy = false; renderOdCard();
-}
-async function odPickFile(){
-  const body = document.getElementById('sheetBody');
-  body.innerHTML = `<h2>Escolha a planilha</h2><p style="font-size:13.5px;">Procurando arquivos do Excel no seu OneDrive…</p>`;
-  document.getElementById('overlay').classList.add('show');
-  try{
-    const token = await odToken(true); if(!token) return;
-    const res = await graphGet("/me/drive/root/search(q='xlsx')?$top=100", token);
-    const files = (res.value||[]).filter(f=>f.file && /\.xlsx$/i.test(f.name)).sort((a,b)=> (b.lastModifiedDateTime||'').localeCompare(a.lastModifiedDateTime||''));
-    if(!files.length){ body.innerHTML = `<h2>Nenhuma planilha encontrada</h2><p style="font-size:13.5px; line-height:1.55;">Não achamos arquivos .xlsx no seu OneDrive. Confira se entrou com a mesma conta que usa no Excel online.</p><div class="sheet-actions"><button class="btn btn-secondary" id="odPickClose">Fechar</button></div>`; document.getElementById('odPickClose').onclick=closeSheet; return; }
-    body.innerHTML = `<h2>Escolha a planilha</h2>` + files.slice(0,40).map((f,i)=>`<button type="button" class="od-pick" data-i="${i}">${f.name}<small>${(f.parentReference&&f.parentReference.path||'').replace(/^\/drive\/root:?/,'') || 'OneDrive'} · alterada ${hhmm(f.lastModifiedDateTime)}</small></button>`).join('');
-    body.querySelectorAll('.od-pick').forEach(b=> b.addEventListener('click', ()=>{
-      const f = files[+b.dataset.i];
-      lsSet('od_item', JSON.stringify({id:f.id, name:f.name}));
-      lsSet('od_info', null);
-      closeSheet(); renderOdCard();
-      odSync({interactive:true});
-    }));
-  }catch(e){
-    console.log(e);
-    body.innerHTML = `<h2>Não deu para listar os arquivos</h2><p style="font-size:13.5px; line-height:1.55;">Confira a internet e tente de novo.</p><div class="sheet-actions"><button class="btn btn-secondary" id="odPickClose">Fechar</button></div>`;
-    document.getElementById('odPickClose').onclick=closeSheet;
-  }
-}
-function odSetupSheet(){
-  const body = document.getElementById('sheetBody');
-  const uri = odRedirectUri();
-  body.innerHTML = `<h2>Ligar ao OneDrive</h2>
-    <p style="font-size:13.5px; line-height:1.55; margin-top:-6px;">Feito uma vez só. Siga o passo a passo que o Claude te mandou no chat e, no fim, cole aqui o código do app.</p>
-    <ol class="od-steps">
-      <li>No portal do Azure, crie um <b>Registro de aplicativo</b> para contas pessoais da Microsoft.</li>
-      <li>Em URI de redirecionamento, escolha <b>Aplicativo de página única (SPA)</b> e cole este endereço:</li>
-    </ol>
-    <div class="od-uri"><span style="flex:1;">${uri}</span><button type="button" id="odCopyUri">Copiar</button></div>
-    <div class="field" style="margin-top:16px;"><label for="odCid">ID do aplicativo (cliente)</label><input type="text" id="odCid" placeholder="00000000-0000-0000-0000-000000000000" value="${odClientId()}" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-    <div class="sheet-actions"><button class="btn btn-secondary" id="odCancel">Cancelar</button><button class="btn btn-primary" id="odSave">Salvar e entrar</button></div>`;
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('odCopyUri').onclick = async ()=>{ try{ await navigator.clipboard.writeText(uri); showToast('Endereço copiado'); }catch(e){ showToast('Selecione e copie o endereço'); } };
-  document.getElementById('odCancel').onclick = closeSheet;
-  document.getElementById('odSave').onclick = async ()=>{
-    const v = document.getElementById('odCid').value.trim();
-    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)){ showToast('Cole o ID no formato 0000…-…'); return; }
-    lsSet('od_client_id', v);
-    closeSheet();
-    if(!window.msal){ showToast('Sem internet para carregar o login da Microsoft'); renderOdCard(); return; }
-    OD.app = null; await odBoot();
-    if(OD.app && !odAccount()) odToken(true);
-  };
-}
-function odDisconnect(){
-  const body = document.getElementById('sheetBody');
-  body.innerHTML = `<h2>Desligar do OneDrive?</h2><p style="font-size:13.5px; line-height:1.55;">O app para de atualizar sozinho. Seus lançamentos e saldos continuam salvos aqui, e a planilha não é alterada.</p>
-    <div class="sheet-actions"><button class="btn btn-secondary" id="odNo">Cancelar</button><button class="btn btn-danger" id="odYes">Desligar</button></div>`;
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('odNo').onclick = closeSheet;
-  document.getElementById('odYes').onclick = async ()=>{
-    lsSet('od_item',null); lsSet('od_info',null); lsSet('od_client_id',null);
-    try{ if(OD.app){ const acc=odAccount(); if(acc) await OD.app.clearCache({account:acc}); } }catch(e){}
-    OD.app=null; closeSheet(); renderOdCard(); renderPainel(); showToast('OneDrive desligado');
-  };
-}
-function renderOdCard(busyText){
-  const el = document.getElementById('odCard'); if(!el) return;
-  const cid = odClientId(), item = odItem(), info = odInfo(), acc = odAccount();
-  let html = '';
-  if(!cid){
-    html = `<p style="font-size:13.5px; color:var(--mut); margin:0 0 14px; line-height:1.55;">Ligue o app à sua planilha do Excel online. Toda vez que você abrir o app, ele busca a versão mais recente sozinho, sem baixar nem importar arquivo.</p>
-      <button class="btn btn-primary" id="odSetup" style="margin-bottom:0;">Ligar ao OneDrive</button>`;
-  } else if(!acc){
-    html = `<p style="font-size:13.5px; color:var(--mut); margin:0 0 14px; line-height:1.55;">${OD.err || 'Entre com a conta Microsoft que você usa no Excel online.'}</p>
-      <button class="btn btn-primary" id="odLogin" style="margin-bottom:0;">Entrar com Microsoft</button>
-      <div class="od-links"><button id="odSetup">Alterar código do app</button></div>`;
-  } else if(!item){
-    html = `<p style="font-size:13.5px; color:var(--mut); margin:0 0 14px; line-height:1.55;">Conectado como <b style="color:var(--text); font-weight:500;">${acc.username||acc.name||'sua conta'}</b>. Agora escolha qual planilha o app deve acompanhar.</p>
-      <button class="btn btn-primary" id="odPick" style="margin-bottom:0;">Escolher planilha</button>
-      <div class="od-links"><button id="odOff">Desligar</button></div>`;
-  } else {
-    let st, err=false;
-    if(busyText || OD.busy) st = busyText || 'Atualizando…';
-    else if(OD.err){ st = OD.err; err=true; }
-    else if(OD.needLogin){ st = 'Sua sessão da Microsoft expirou. Entre de novo para atualizar.'; err=true; }
-    else if(info && info.syncedAt) st = 'Atualizado '+hhmm(info.syncedAt)+(info.savedAt? ' · planilha salva '+hhmm(info.savedAt):'');
-    else st = 'Ainda não atualizado';
-    html = `<div class="od-file"><div class="ic">XL</div><div style="min-width:0; flex:1;"><div class="nm">${(info&&info.name)||item.name}</div><div class="st${err?' err':''}">${st}</div></div></div>
-      ${OD.needLogin ? `<button class="btn btn-primary" id="odRelogin" style="margin-bottom:4px;">Entrar de novo</button>` : `<button class="btn btn-secondary" id="odNow" style="margin-bottom:4px;" ${OD.busy?'disabled':''}>Atualizar agora</button>`}
-      <div class="od-links"><button id="odPick">Trocar planilha</button><button id="odOff">Desligar</button></div>`;
-  }
-  el.innerHTML = html;
-  const on = (id,fn)=>{ const b=document.getElementById(id); if(b) b.onclick=fn; };
-  on('odSetup', odSetupSheet);
-  on('odLogin', ()=>{ if(!OD.app){ odBoot().then(()=>odToken(true)); } else odToken(true); });
-  on('odPick', odPickFile);
-  on('odOff', odDisconnect);
-  on('odNow', ()=> odSync({interactive:false}));
-  on('odRelogin', ()=> odToken(true));
-}
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && odItem() && odAccount() && Date.now()-OD.lastTry > 60000) odSync({auto:true});
-});
-
 /* ============ INIT ============ */
 async function init(){
   populateCategoriaSelect();
@@ -1460,7 +1243,6 @@ async function init(){
     await showMigrationSetup();
     renderPainel(); renderHistorico(); renderExportar();
   }
-  odBoot();
 }
 init();
 </script>
