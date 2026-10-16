@@ -150,7 +150,7 @@ main{flex:1; overflow:hidden; position:relative;}
 
 .field{margin-bottom:16px;}
 .field label{display:block; font-size:13px; font-weight:500; color:var(--mut); margin-bottom:8px;}
-.field select, .field input[type=text], .field input[type=date]{
+.field select, .field input[type=text], .field input[type=date], .field input[type=email], .field input[type=password]{
   width:100%; padding:13px 14px; border-radius:var(--r-md); border:1px solid var(--line2); background:var(--surface2);
   font-size:16px; font-family:inherit; color:var(--text); appearance:none; -webkit-appearance:none;
 }
@@ -279,6 +279,29 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 #storageWarn b{font-weight:600;}
 .data-box{background:var(--surface2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; font-size:13px; color:var(--mut); line-height:1.5; margin:18px 0 10px;}
 .data-box b{color:var(--text); font-weight:500;}
+
+.gate{position:fixed; inset:0; z-index:400; background:var(--ink); display:none; overflow-y:auto;}
+.gate.show{display:block;}
+.gate-in{max-width:420px; margin:0 auto; padding:calc(56px + var(--safe-top)) 24px calc(40px + var(--safe-bottom));}
+.gate .mark{width:52px; height:52px; border-radius:16px; border:1.5px solid var(--champ); display:flex; align-items:center; justify-content:center; color:var(--champ); font-weight:600; font-size:19px; margin-bottom:22px;}
+.gate h1{margin:0; font-size:28px; font-weight:600; letter-spacing:-.025em;}
+.gate p{margin:8px 0 26px; color:var(--mut); font-size:14.5px; line-height:1.5;}
+.gate .field input{font-size:16px;}
+.gate-err{color:var(--red); font-size:13.5px; min-height:20px; margin:-4px 0 10px; line-height:1.4;}
+.gate-links{display:flex; justify-content:space-between; gap:12px; margin-top:6px;}
+.gate-links button{background:none; border:none; color:var(--mut); font-family:inherit; font-size:14px; padding:8px 0;}
+.acct-row{display:flex; align-items:center; gap:12px; width:100%; background:var(--surface2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:0 0 16px; color:var(--text); font-family:inherit; font-size:14.5px; text-align:left;}
+.acct-row .av{width:34px; height:34px; border-radius:50%; background:var(--champ); color:var(--champ-ink); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; flex:none;}
+.acct-row .tx{flex:1; min-width:0;} .acct-row .tx small{display:block; color:var(--faint); font-size:12.5px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.acct-row .chev{width:8px; height:8px; border-right:1.5px solid var(--faint); border-bottom:1.5px solid var(--faint); transform:rotate(-45deg); flex:none;}
+.switch-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0; border-bottom:1px solid var(--line);}
+.switch-row .tx{font-size:15px;} .switch-row .tx small{display:block; font-size:12.5px; color:var(--faint); margin-top:2px;}
+.switch{position:relative; width:50px; height:30px; border-radius:30px; background:var(--line2); border:none; flex:none; transition:background .2s;}
+.switch:after{content:''; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.switch.on{background:var(--green);} .switch.on:after{transform:translateX(20px);}
+.bmark-sm{width:30px; height:30px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:600; flex:none;}
+.bk-del{background:none; border:1px solid var(--line2); color:var(--mut); border-radius:10px; padding:7px 12px; font-family:inherit; font-size:13px;}
+.bk-del.danger{border-color:var(--red); color:var(--red);}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -424,6 +447,36 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 </div>
 
 
+<div id="authGate" class="gate">
+  <div class="gate-in">
+    <div class="mark">MF</div>
+    <h1 id="agTitle">Entre na sua conta</h1>
+    <p id="agSub">Seus lançamentos ficam guardados na nuvem e aparecem em qualquer aparelho.</p>
+    <form id="agForm" autocomplete="on" onsubmit="return false;">
+      <div class="field"><label for="agEmail">E-mail</label><input type="email" id="agEmail" name="email" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="field"><label for="agPass">Senha</label><input type="password" id="agPass" name="password" autocomplete="current-password"></div>
+      <div class="gate-err" id="agErr"></div>
+      <button type="submit" class="btn btn-primary" id="agSubmit">Entrar</button>
+    </form>
+    <div class="gate-links"><button type="button" id="agToggle">Criar conta</button><button type="button" id="agForgot">Esqueci a senha</button></div>
+  </div>
+</div>
+
+<div id="lockGate" class="gate">
+  <div class="gate-in" style="text-align:center;">
+    <div class="mark" style="margin:0 auto 18px;">MF</div>
+    <h1>App bloqueado</h1>
+    <p>Use o Face ID para ver suas finanças.</p>
+    <button type="button" class="btn btn-primary" id="lgUnlock" style="margin-top:22px;">Desbloquear com Face ID</button>
+    <div id="lgPassBox" style="display:none; text-align:left; margin-top:14px;">
+      <div class="field"><label for="lgPass">Senha da conta</label><input type="password" id="lgPass" autocomplete="current-password"></div>
+      <div class="gate-err" id="lgErr"></div>
+      <button type="button" class="btn btn-secondary" id="lgPassBtn">Desbloquear com a senha</button>
+    </div>
+    <div class="gate-links" style="justify-content:center;"><button type="button" id="lgUsePass">Usar a senha</button></div>
+  </div>
+</div>
+
 <div id="overlay">
   <div id="sheet">
     <div class="handle"></div>
@@ -435,6 +488,9 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.14.1/firebase-firestore-compat.js"></script>
 <script>
 /* ============ ARMAZENAMENTO ============
    Dentro do Claude, window.storage já existe e salva na nuvem.
@@ -513,7 +569,12 @@ const CATEGORIAS = [
   ['Cuidados Pessoais','Saída',50],['Parcelas','Saída',null],['Oferta','Saída',null],
   ['Emprestei','Saída',null],['PICPAY','Investimento',null]
 ];
-const BANCOS = ['PICPAY','COFRINHO (PICPAY)','SANTANDER','NUBANK','C6 BANK','DINHEIRO FÍSICO'];
+const BANCOS_PADRAO = ['PICPAY','COFRINHO (PICPAY)','SANTANDER','NUBANK','C6 BANK','DINHEIRO FÍSICO'];
+const BANCOS = [...BANCOS_PADRAO]; // lista editável (Ajustes › Bancos); muda no lugar para todo o app enxergar
+function setBancos(lista){ const l = (lista||[]).map(s=>String(s).trim()).filter(Boolean); BANCOS.length = 0; (l.length?l:BANCOS_PADRAO).forEach(b=>{ if(!BANCOS.includes(b)) BANCOS.push(b); }); }
+const BANK_PALETTE = ['#2F6FD6','#C2410C','#0F766E','#9333EA','#B45309','#BE185D','#4D7C0F','#475569'];
+function bankColor(b){ if(BANK_GRAD[b]) return BANK_GRAD[b]; let h=0; for(const ch of String(b)) h=(h*31+ch.charCodeAt(0))>>>0; return BANK_PALETTE[h%BANK_PALETTE.length]; }
+function bankAbbr(b){ if(BANK_ABBR[b]) return BANK_ABBR[b]; const w=String(b).replace(/[^A-Za-zÀ-ÿ0-9 ]/g,' ').split(/\s+/).filter(Boolean); const s = w.length>1 ? w[0][0]+w[1][0] : (w[0]||'?').slice(0,2); return s[0].toUpperCase()+(s[1]||'').toLowerCase(); }
 const BANK_GRAD = {
   'PICPAY':'#12B865', 'COFRINHO (PICPAY)':'#1E7A50', 'SANTANDER':'#D81E1E',
   'NUBANK':'#8A2BD6', 'C6 BANK':'#3B3F3E', 'DINHEIRO FÍSICO':'#A88A45'
@@ -556,15 +617,23 @@ async function loadData(){
   catch(e){ state.saldosIniciais = {}; }
   try{ const r = await window.storage.get('controleSnapshot_planilha_antiga'); state.controleSnapshot = r ? JSON.parse(r.value) : null; }
   catch(e){ state.controleSnapshot = null; }
+  try{ const r = await window.storage.get('bancos_planilha_antiga'); if(r) setBancos(JSON.parse(r.value)); }catch(e){}
+}
+async function persistBancos(){
+  try{ await window.storage.set('bancos_planilha_antiga', JSON.stringify(BANCOS)); }catch(e){}
+  if(typeof clPushMeta==='function') clPushMeta();
 }
 async function persistLancamentos(){
-  try{ await window.storage.set('lancamentos_planilha_antiga', JSON.stringify(state.lancamentos)); }catch(e){ showToast('Não foi possível guardar no iPhone. Veja o aviso no topo.'); checarArmazenamento(); }
+  try{ await window.storage.set('lancamentos_planilha_antiga', JSON.stringify(state.lancamentos)); }catch(e){ if(!(typeof CL!=='undefined' && CL.user)){ showToast('Não foi possível guardar no iPhone. Veja o aviso no topo.'); checarArmazenamento(); } }
+  if(typeof clPushLanc==='function') clPushLanc();
 }
 async function persistSaldos(){
-  try{ await window.storage.set('saldosIniciais_planilha_antiga', JSON.stringify(state.saldosIniciais)); }catch(e){ showToast('Erro ao salvar ajustes.'); }
+  try{ await window.storage.set('saldosIniciais_planilha_antiga', JSON.stringify(state.saldosIniciais)); }catch(e){}
+  if(typeof clPushMeta==='function') clPushMeta();
 }
 async function persistSnapshots(){
   try{ await window.storage.set('controleSnapshot_planilha_antiga', JSON.stringify(state.controleSnapshot)); }catch(e){}
+  if(typeof clPushMeta==='function') clPushMeta();
 }
 
 /* ============ TOAST ============ */
@@ -599,7 +668,7 @@ function populateBancoSelect(){
   const sel = document.getElementById('fBanco');
   sel.innerHTML = BANCOS.map(b=>`<option value="${b}">${bankLabel(b)}</option>`).join('');
   const dest = document.getElementById('fBancoDest');
-  if(dest){ dest.innerHTML = BANCOS.map(b=>`<option value="${b}">${bankLabel(b)}</option>`).join(''); dest.value = BANCOS[1]; }
+  if(dest){ dest.innerHTML = BANCOS.map(b=>`<option value="${b}">${bankLabel(b)}</option>`).join(''); dest.value = BANCOS[1] || BANCOS[0]; }
 }
 const CAT_TRANSF_SAI = (CATEGORIAS.find(c=>c[1]==='Saída' && /^Transfer/i.test(c[0]))||['Transferência de Bancos - Saí'])[0];
 const CAT_TRANSF_ENTRA = (CATEGORIAS.find(c=>c[1]==='Entrada' && /^Transfer/i.test(c[0]))||['Transferência de Bancos - Entra'])[0];
@@ -779,8 +848,8 @@ function renderPainel(){
     const val = computeBankBalance(b); totalContas += val;
     const d = pendingDeltaForBank(b);
     const sub = d ? (d>0?'+ ':'− ')+fmtMoney(Math.abs(d))+' no app' : 'Igual à planilha';
-    return `<div class="wallet-card" data-bank="${b}" style="--bank:${BANK_GRAD[b]||'#444'}" role="button" tabindex="0">
-      <div class="bmark">${BANK_ABBR[b]||b.slice(0,2)}</div>
+    return `<div class="wallet-card" data-bank="${b}" style="--bank:${bankColor(b)}" role="button" tabindex="0">
+      <div class="bmark">${bankAbbr(b)}</div>
       <div class="binfo"><div class="bname">${bankLabel(b)}</div><div class="bsince">${sub}</div></div>
       <div class="bval num${val<0?' neg':''}">${fmtMoney(val)}</div>
     </div>`;
@@ -839,10 +908,45 @@ document.getElementById('btnTema').addEventListener('click', ()=>{
 });
 
 
+
+/* ---- bancos (adicionar / remover) ---- */
+function openBancosSheet(){
+  const body = document.getElementById('sheetBody');
+  const render = ()=>{
+    body.innerHTML = `<h2>Bancos</h2>
+      <p style="font-size:13px; line-height:1.5; margin-top:-6px;">Deixe igual ao bloco CARTEIRAS BANCARIAS da sua planilha. Use o nome exatamente como está lá.</p>
+      <div id="bkList">${BANCOS.map(b=>{
+        const n = state.lancamentos.filter(l=>l.banco===b).length;
+        return `<div class="settings-row"><span style="display:flex; align-items:center; gap:10px;"><span class="bmark-sm" style="background:${bankColor(b)}">${bankAbbr(b)}</span><span>${bankLabel(b)}<small style="display:block; font-size:12px; color:var(--faint);">${n} lançamento(s)</small></span></span>
+          <button type="button" class="bk-del" data-b="${b}">Remover</button></div>`;}).join('')}</div>
+      <div class="field" style="margin-top:16px;"><label for="bkNovo">Novo banco</label>
+        <div style="display:flex; gap:8px;"><input type="text" id="bkNovo" placeholder="Ex: INTER" autocapitalize="characters" style="flex:1;"><button type="button" class="btn btn-primary" id="bkAdd" style="width:auto; margin:0; padding:0 18px;">Adicionar</button></div></div>
+      <p style="font-size:12.5px; color:var(--faint); line-height:1.5;">Remover um banco só tira ele da lista. Os lançamentos antigos dele continuam no histórico.</p>
+      <div class="sheet-actions"><button class="btn btn-secondary" id="bkFechar">Concluir</button></div>`;
+    body.querySelectorAll('.bk-del').forEach(btn=> btn.onclick = async ()=>{
+      if(BANCOS.length<=1){ showToast('Deixe pelo menos um banco.'); return; }
+      if(btn.dataset.confirm!=='1'){ btn.dataset.confirm='1'; btn.textContent='Confirmar'; btn.classList.add('danger'); return; }
+      const i = BANCOS.indexOf(btn.dataset.b); if(i>=0) BANCOS.splice(i,1);
+      await persistBancos(); populateBancoSelect(); renderPainel(); render();
+      showToast(bankLabel(btn.dataset.b)+' removido');
+    });
+    document.getElementById('bkAdd').onclick = async ()=>{
+      const v = document.getElementById('bkNovo').value.trim().toUpperCase();
+      if(!v){ showToast('Digite o nome do banco.'); return; }
+      if(BANCOS.some(b=>b.toUpperCase()===v)){ showToast('Esse banco já está na lista.'); return; }
+      BANCOS.push(v); await persistBancos(); populateBancoSelect(); renderPainel(); render();
+      showToast(bankLabel(v)+' adicionado');
+    };
+    document.getElementById('bkFechar').onclick = closeSheet;
+  };
+  render();
+  document.getElementById('overlay').classList.add('show');
+}
+
 /* ============ BACKUP ============ */
 function backupPayload(){
   return JSON.stringify({ app:'meu_financeiro_planilha_antiga', versao:1, criadoEm:new Date().toISOString(),
-    lancamentos:state.lancamentos, saldosIniciais:state.saldosIniciais, controleSnapshot:state.controleSnapshot });
+    lancamentos:state.lancamentos, saldosIniciais:state.saldosIniciais, controleSnapshot:state.controleSnapshot, bancos:[...BANCOS] });
 }
 async function salvarBackup(){
   const nome = 'backup_meu_financeiro_'+todayISO()+'.json';
@@ -870,7 +974,7 @@ function restaurarBackup(){
     document.getElementById('overlay').classList.add('show');
     document.getElementById('rbNo').onclick = closeSheet;
     document.getElementById('rbYes').onclick = async ()=>{
-      state.lancamentos = d.lancamentos; state.saldosIniciais = d.saldosIniciais||{}; state.controleSnapshot = d.controleSnapshot||null;
+      state.lancamentos = d.lancamentos; state.saldosIniciais = d.saldosIniciais||{}; state.controleSnapshot = d.controleSnapshot||null; if(d.bancos){ setBancos(d.bancos); await persistBancos(); populateBancoSelect(); }
       await persistLancamentos(); await persistSaldos(); await persistSnapshots();
       closeSheet(); renderPainel(); renderHistorico(); renderExportar();
       showToast('Backup restaurado: '+d.lancamentos.length+' lançamento(s)');
@@ -891,7 +995,7 @@ async function checarArmazenamento(){
 /* ---- Ajustes (editar todos os saldos de uma vez) ---- */
 document.getElementById('btnAjustes').addEventListener('click', ()=>{
   const body = document.getElementById('sheetBody');
-  body.innerHTML = `<h2>Saldos das contas</h2>
+  body.innerHTML = `${acctRowHtml()}<h2>Saldos das contas</h2>
     <p style="font-size:12.5px; color:var(--mut); margin-top:-8px; line-height:1.5;">Digite o saldo exato de cada carteira. Toque no +/− para trocar o sinal.</p>
     <div id="saldoRows">${BANCOS.map(b=>{
       const v = computeBankBalance(b);
@@ -905,10 +1009,13 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
       </div>`;
     }).join('')}</div>
     <div class="sheet-actions"><button class="btn btn-primary" id="btnSalvarSaldos" style="margin-top:14px;">Salvar</button></div>
+    <button type="button" class="btn btn-secondary" id="btnBancos" style="margin-top:10px;">Adicionar ou remover bancos</button>
     <div class="data-box">Guardados neste iPhone: <b>${state.lancamentos.length} lançamento(s)</b>, ${state.lancamentos.filter(l=>l.synced!==true).length} pendente(s).<br>${KV.st.lastSave ? 'Último salvamento: '+hhmm(new Date(KV.st.lastSave).toISOString())+'. ' : ''}${lsGetRaw('ultimo_backup') ? 'Último backup: '+hhmm(lsGetRaw('ultimo_backup'))+'.' : 'Nenhum backup feito ainda.'}</div>
     <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-secondary" id="btnBackup">Salvar backup</button><button class="btn btn-secondary" id="btnRestaurar">Restaurar backup</button></div>
-    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · dados protegidos</p>`;
+    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · nuvem ligada</p>`;
   document.getElementById('btnBackup').onclick = salvarBackup;
+  document.getElementById('btnBancos').onclick = openBancosSheet;
+  const ar = document.getElementById('btnConta'); if(ar) ar.onclick = openContaSheet;
   document.getElementById('btnRestaurar').onclick = ()=>{ closeSheet(); restaurarBackup(); };
   document.getElementById('overlay').classList.add('show');
   document.querySelectorAll('.sign-btn').forEach(btn=>{
@@ -975,7 +1082,7 @@ function openEditSheet(id){
   state.editingId = id;
   const body = document.getElementById('sheetBody');
   const catOpts = CATEGORIAS.filter(c=>c[1]===item.tipo).map(c=>`<option value="${c[0]}" ${c[0]===item.categoria?'selected':''}>${c[0]}</option>`).join('');
-  const bankOpts = BANCOS.map(b=>`<option value="${b}" ${b===item.banco?'selected':''}>${b}</option>`).join('');
+  const bankOpts = (BANCOS.includes(item.banco) ? BANCOS : [...BANCOS, item.banco]).map(b=>`<option value="${b}" ${b===item.banco?'selected':''}>${bankLabel(b)}</option>`).join('');
   body.innerHTML = `<h2>${item.transferId ? 'Editar transferência' : 'Editar lançamento'}</h2>${item.transferId ? `<p style="font-size:13px; line-height:1.5; margin-top:-8px;">Esta é a ${item.tipo==='Saída'?'saída':'entrada'} de uma transferência. Valor, data, descrição e status mudam também na outra parte; excluir apaga as duas.</p>` : ''}
     <div class="field"><label>Valor</label><div class="valor-wrap"><span class="prefix">R$</span><input type="text" inputmode="decimal" id="eValor" value="${item.valor.toFixed(2).replace('.',',')}"></div></div>
     <div class="field"><label>Categoria</label><select id="eCategoria">${catOpts}</select></div>
@@ -1239,7 +1346,7 @@ function extractControleSnapshot(wb, anoFallback){
       if(lab.startsWith('CARTEIRAS BANC')){ inBlock=true; break; }
       if(!inBlock) continue;
       if(lab.startsWith('CARTEIRA BANC')){ inBlock=false; break; }
-      const b = BANCOS.find(x=>nUp(x)===lab);
+      const b = lab.startsWith('TOTAL') ? null : (BANCOS.find(x=>nUp(x)===lab) || String(row[col]).trim());
       if(b){
         for(let k=col+1;k<row.length;k++){ if(typeof row[k]==='number'){ carteiras[b]=row[k]; break; } }
       }
@@ -1250,6 +1357,8 @@ function extractControleSnapshot(wb, anoFallback){
 }
 function applyCarteirasFromSnapshot(snap){
   if(!snap || !snap.carteiras) return false;
+  const novos = Object.keys(snap.carteiras).filter(b=>!BANCOS.includes(b));
+  if(novos.length){ novos.forEach(b=>BANCOS.push(b)); persistBancos(); populateBancoSelect(); }
   Object.entries(snap.carteiras).forEach(([b,v])=>{ state.saldosIniciais[b]=v; });
   return Object.keys(snap.carteiras).length>0;
 }
@@ -1593,12 +1702,294 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' && odItem() && odAccount() && Date.now()-OD.lastTry > 60000) odSync({auto:true});
 });
 
+
+/* ============ NUVEM (Firebase) ============ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBIcREsExao2lNW0ClO6GNaDasZZi5Y2Ic",
+  authDomain: "meu-financeiro-2fe8a.firebaseapp.com",
+  projectId: "meu-financeiro-2fe8a",
+  storageBucket: "meu-financeiro-2fe8a.firebasestorage.app",
+  messagingSenderId: "793075211686",
+  appId: "1:793075211686:web:f0b5e8a681361162f98367"
+};
+const CL = { enabled:false, user:null, db:null, known:new Map(), metaKnown:'', unsubs:[], ready:false, authResolved:false };
+function fbConfig(){
+  if(FIREBASE_CONFIG) return FIREBASE_CONFIG;
+  try{ return JSON.parse(lsGetRaw('fb_config')||'null'); }catch(e){ return null; }
+}
+function stableStr(o){ const k = Object.keys(o).sort(); const r = {}; k.forEach(x=>{ if(o[x]!==undefined) r[x]=o[x]; }); return JSON.stringify(r); }
+function cleanObj(o){ return JSON.parse(JSON.stringify(o)); }
+function clBase(){ return CL.db.collection('users').doc(CL.user.uid); }
+function clBoot(){
+  const cfg = fbConfig();
+  if(!cfg || !window.firebase || !cfg.apiKey){ return false; }
+  try{ if(!firebase.apps.length) firebase.initializeApp(cfg); }catch(e){ console.log(e); return false; }
+  CL.enabled = true;
+  CL.db = firebase.firestore();
+  try{ CL.db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+  try{ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{}); }catch(e){}
+  firebase.auth().onAuthStateChanged(u=>{ CL.authResolved = true; clOnUser(u); });
+  return true;
+}
+function clStop(){ CL.unsubs.forEach(u=>{ try{u();}catch(e){} }); CL.unsubs = []; CL.ready = false; CL.metaReady = false; CL.known = new Map(); CL.metaKnown=''; }
+/* Os lançamentos ficam em users/{uid}/meses/{AAAA-MM}: um documento por mês.
+   Assim cada abertura do app lê poucos documentos e o plano gratuito sobra. */
+function groupByMonth(list){
+  const m = new Map();
+  list.forEach(l=>{ const k = (l.date||'0000-00').slice(0,7); if(!m.has(k)) m.set(k, []); m.get(k).push(cleanObj(l)); });
+  m.forEach(arr=> arr.sort((x,y)=> String(x.id).localeCompare(String(y.id))));
+  return m;
+}
+function monthStr(arr){ return JSON.stringify(arr.map(stableStr)); }
+async function clOnUser(u){
+  clStop();
+  CL.user = u || null;
+  if(!u){ showAuthGate(); return; }
+  hideAuthGate();
+  document.getElementById('lgUsePass').style.display='';
+  if(fidEnabled() && !LOCK.unlocked) showLock();
+  const dono = lsGetRaw('cl_owner');
+  if(dono && dono!==u.uid){
+    // aparelho usado antes por outra conta: começa limpo, sem misturar nada
+    state.lancamentos = []; state.saldosIniciais = {}; state.controleSnapshot = null; setBancos(BANCOS_PADRAO);
+    lsSetRaw('cl_owner', u.uid);
+    renderPainel(); renderHistorico(); renderExportar();
+  }
+  const base = clBase();
+  let first = true;
+  CL.unsubs.push(base.collection('meses').onSnapshot(async snap=>{
+    if(snap.metadata && snap.metadata.fromCache && snap.empty && state.lancamentos.length) return; // sem internet: mantém o que há no aparelho
+    const remote = new Map(); snap.forEach(d=>{ const v = d.data(); remote.set(d.id, Array.isArray(v.itens) ? v.itens : []); });
+    if(first){ first = false; await clFirstMerge(remote); return; }
+    clApplyRemote(remote);
+  }, err=>clErr(err)));
+  CL.unsubs.push(base.collection('meta').doc('estado').onSnapshot(d=>{
+    if(!d.exists){ CL.metaReady = true; clPushMeta(true); return; }
+    CL.metaReady = true;
+    const data = d.data();
+    const s = stableStr({saldosIniciais:data.saldosIniciais||{}, controleSnapshot:data.controleSnapshot||null, bancos:data.bancos||[]});
+    if(s===CL.metaKnown) return;
+    CL.metaKnown = s;
+    state.saldosIniciais = data.saldosIniciais || {};
+    state.controleSnapshot = data.controleSnapshot || null;
+    if(Array.isArray(data.bancos) && data.bancos.length){ setBancos(data.bancos); populateBancoSelect(); }
+    try{ window.storage.set('saldosIniciais_planilha_antiga', JSON.stringify(state.saldosIniciais)); window.storage.set('controleSnapshot_planilha_antiga', JSON.stringify(state.controleSnapshot)); window.storage.set('bancos_planilha_antiga', JSON.stringify(BANCOS)); }catch(e){}
+    renderPainel();
+  }, err=>clErr(err)));
+}
+async function clFirstMerge(remote){
+  const uid = CL.user.uid;
+  const dono = lsGetRaw('cl_owner');
+  CL.known = new Map(); remote.forEach((arr,k)=> CL.known.set(k, monthStr(groupByMonth(arr).get(k)||[])));
+  const remoteList = []; remote.forEach(arr=> arr.forEach(x=> remoteList.push(x)));
+  if(dono && dono!==uid){
+    state.lancamentos = remoteList;
+  } else if(!lsGetRaw('cl_merged_'+uid)){
+    // primeira vez desta conta neste aparelho: junta o que está no aparelho com a nuvem
+    const ids = new Set(remoteList.map(x=>x.id));
+    const locais = state.lancamentos.filter(l=>!ids.has(l.id));
+    state.lancamentos = remoteList.concat(locais);
+    if(locais.length) showToast(locais.length+' lançamento(s) deste aparelho enviados para a nuvem');
+  } else {
+    state.lancamentos = remoteList;
+  }
+  lsSetRaw('cl_owner', uid); lsSetRaw('cl_merged_'+uid, '1');
+  CL.ready = true;
+  await clPushLanc();
+  try{ await window.storage.set('lancamentos_planilha_antiga', JSON.stringify(state.lancamentos)); }catch(e){}
+  populateBancoSelect(); renderPainel(); renderHistorico(); renderExportar();
+}
+function clApplyRemote(remote){
+  const nova = new Map(); remote.forEach((arr,k)=> nova.set(k, monthStr(groupByMonth(arr).get(k)||[])));
+  let igual = nova.size===CL.known.size;
+  if(igual){ for(const [k,s] of nova){ if(CL.known.get(k)!==s){ igual=false; break; } } }
+  CL.known = nova;
+  if(igual) return;
+  const list = []; remote.forEach(arr=> arr.forEach(x=> list.push(x)));
+  state.lancamentos = list;
+  try{ window.storage.set('lancamentos_planilha_antiga', JSON.stringify(state.lancamentos)); }catch(e){}
+  renderPainel(); renderHistorico(); renderExportar();
+}
+async function clPushLanc(){
+  if(!CL.user || !CL.ready) return;
+  const col = clBase().collection('meses');
+  const cur = groupByMonth(state.lancamentos);
+  const ops = [];
+  cur.forEach((arr,k)=>{ const s = monthStr(arr); if(CL.known.get(k)!==s){ ops.push(['set',k,arr]); CL.known.set(k,s); } });
+  [...CL.known.keys()].forEach(k=>{ if(!cur.has(k)){ ops.push(['del',k]); CL.known.delete(k); } });
+  for(let i=0;i<ops.length;i+=400){
+    const batch = CL.db.batch();
+    ops.slice(i,i+400).forEach(([t,k,arr])=>{ if(t==='set') batch.set(col.doc(k), {itens:arr, atualizadoEm:new Date().toISOString()}); else batch.delete(col.doc(k)); });
+    batch.commit().catch(err=>clErr(err));
+  }
+}
+function clPushMeta(force){
+  if(!CL.user || (!CL.metaReady && !force)) return; // só envia depois de ler o que já está na nuvem
+  const data = cleanObj({saldosIniciais:state.saldosIniciais||{}, controleSnapshot:state.controleSnapshot||null, bancos:[...BANCOS]});
+  const s = stableStr(data);
+  if(s===CL.metaKnown) return;
+  CL.metaKnown = s;
+  data.atualizadoEm = new Date().toISOString();
+  clBase().collection('meta').doc('estado').set(data).catch(err=>clErr(err));
+}
+function clErr(err){
+  console.log(err);
+  if(err && err.code==='permission-denied') showToast('A nuvem recusou o acesso. Confira as regras do Firestore.');
+}
+/* ---- tela de login ---- */
+let agMode = 'login';
+function authMsg(e){
+  const c = (e && e.code)||'';
+  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return 'E-mail ou senha incorretos.';
+  if(/email-already-in-use/.test(c)) return 'Já existe uma conta com esse e-mail. Toque em “Já tenho conta”.';
+  if(/weak-password/.test(c)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if(/invalid-email/.test(c)) return 'Esse e-mail não parece válido.';
+  if(/network/.test(c)) return 'Sem internet. Tente de novo quando conectar.';
+  if(/too-many-requests/.test(c)) return 'Muitas tentativas. Espere alguns minutos.';
+  if(/operation-not-allowed/.test(c)) return 'Ative o login por e-mail e senha no Firebase (Authentication › Método de login).';
+  if(/admin-restricted|restricted/.test(c)) return 'A criação de contas está desligada no Firebase.';
+  return 'Não foi possível entrar agora. ('+c+')';
+}
+function setAgMode(m){
+  agMode = m;
+  document.getElementById('agTitle').textContent = m==='login' ? 'Entre na sua conta' : 'Crie sua conta';
+  document.getElementById('agSubmit').textContent = m==='login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('agToggle').textContent = m==='login' ? 'Criar conta' : 'Já tenho conta';
+  document.getElementById('agPass').setAttribute('autocomplete', m==='login' ? 'current-password' : 'new-password');
+  document.getElementById('agErr').textContent = '';
+}
+function showAuthGate(){ setAgMode(agMode); document.getElementById('authGate').classList.add('show'); }
+function hideAuthGate(){ document.getElementById('authGate').classList.remove('show'); }
+document.getElementById('agToggle').onclick = ()=> setAgMode(agMode==='login' ? 'signup' : 'login');
+document.getElementById('agForm').addEventListener('submit', async ()=>{
+  const email = document.getElementById('agEmail').value.trim(), pass = document.getElementById('agPass').value;
+  const err = document.getElementById('agErr'), btn = document.getElementById('agSubmit');
+  if(!email || !pass){ err.textContent = 'Preencha e-mail e senha.'; return; }
+  btn.disabled = true; err.textContent = '';
+  LOCK.unlocked = true; document.getElementById('lockGate').classList.remove('show');
+  try{
+    if(agMode==='login') await firebase.auth().signInWithEmailAndPassword(email, pass);
+    else await firebase.auth().createUserWithEmailAndPassword(email, pass);
+    LOCK.unlocked = true;
+    document.getElementById('agPass').value = '';
+  }catch(e){ err.textContent = authMsg(e); }
+  btn.disabled = false;
+});
+document.getElementById('agForgot').onclick = async ()=>{
+  const email = document.getElementById('agEmail').value.trim(), err = document.getElementById('agErr');
+  if(!email){ err.textContent = 'Digite seu e-mail acima e toque de novo em “Esqueci a senha”.'; return; }
+  try{ await firebase.auth().sendPasswordResetEmail(email); err.style.color='var(--green)'; err.textContent = 'Enviamos um link para redefinir a senha no seu e-mail.'; setTimeout(()=>{ err.style.color=''; }, 6000); }
+  catch(e){ err.textContent = authMsg(e); }
+};
+/* ---- Face ID (WebAuthn) ---- */
+const LOCK = { unlocked:false, hiddenAt:0 };
+function fidEnabled(){ return !!lsGetRaw('faceid_cred'); }
+function b64u(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function fromB64u(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return Uint8Array.from(atob(s), ch=>ch.charCodeAt(0)); }
+async function fidEnable(){
+  if(!window.PublicKeyCredential || !navigator.credentials){ showToast('Este aparelho não oferece Face ID para o app.'); return false; }
+  try{
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name:'Meu Financeiro', id: location.hostname },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: (CL.user && CL.user.email) || 'meu-financeiro', displayName: 'Meu Financeiro' },
+      pubKeyCredParams: [{type:'public-key', alg:-7}, {type:'public-key', alg:-257}],
+      authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' },
+      timeout: 60000, attestation:'none'
+    }});
+    lsSetRaw('faceid_cred', b64u(cred.rawId));
+    showToast('Face ID ativado');
+    return true;
+  }catch(e){ console.log(e); showToast('Face ID não foi ativado.'); return false; }
+}
+async function fidVerify(){
+  const id = lsGetRaw('faceid_cred'); if(!id) return true;
+  const r = await navigator.credentials.get({ publicKey:{
+    challenge: crypto.getRandomValues(new Uint8Array(32)),
+    allowCredentials: [{type:'public-key', id: fromB64u(id), transports:['internal','hybrid']}],
+    userVerification: 'required', timeout: 60000, rpId: location.hostname
+  }});
+  return !!r;
+}
+function showLock(){
+  LOCK.unlocked = false;
+  document.getElementById('lgPassBox').style.display = 'none';
+  document.getElementById('lgUsePass').style.display = (CL.user ? '' : 'none');
+  document.getElementById('lockGate').classList.add('show');
+}
+function unlock(){ LOCK.unlocked = true; document.getElementById('lockGate').classList.remove('show'); }
+document.getElementById('lgUnlock').onclick = async ()=>{
+  try{ if(await fidVerify()) unlock(); }catch(e){ console.log(e); showToast('Não deu certo. Tente de novo ou use a senha.'); }
+};
+document.getElementById('lgUsePass').onclick = ()=>{ document.getElementById('lgPassBox').style.display='block'; document.getElementById('lgPass').focus(); };
+document.getElementById('lgPassBtn').onclick = async ()=>{
+  const err = document.getElementById('lgErr');
+  try{
+    const u = firebase.auth().currentUser;
+    const cred = firebase.auth.EmailAuthProvider.credential(u.email, document.getElementById('lgPass').value);
+    await u.reauthenticateWithCredential(cred);
+    document.getElementById('lgPass').value=''; err.textContent=''; unlock();
+  }catch(e){ err.textContent = authMsg(e); }
+};
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='hidden'){ LOCK.hiddenAt = Date.now(); return; }
+  if(fidEnabled() && LOCK.unlocked && LOCK.hiddenAt && Date.now()-LOCK.hiddenAt > 3*60*1000) showLock();
+});
+/* ---- conta (dentro dos ajustes) ---- */
+function acctRowHtml(){
+  if(!CL.enabled) return `<button type="button" class="acct-row" id="btnConta"><span class="av">☁</span><span class="tx">Guardar na nuvem<small>Ainda não configurado</small></span><span class="chev"></span></button>`;
+  if(!CL.user) return '';
+  const e = CL.user.email||'';
+  return `<button type="button" class="acct-row" id="btnConta"><span class="av">${(e[0]||'?').toUpperCase()}</span><span class="tx">${e}<small>Dados na nuvem${fidEnabled()?' · Face ID ativo':''}</small></span><span class="chev"></span></button>`;
+}
+function openContaSheet(){
+  const body = document.getElementById('sheetBody');
+  if(!CL.enabled){
+    body.innerHTML = `<h2>Guardar na nuvem</h2>
+      <p style="font-size:13.5px; line-height:1.55; margin-top:-6px;">Cole aqui a configuração do seu projeto do Firebase (o bloco <b>firebaseConfig</b> que aparece ao registrar o app da Web).</p>
+      <textarea id="fbCfgIn" style="width:100%; min-height:150px; border-radius:14px; border:1px solid var(--line2); background:var(--surface2); color:var(--text); padding:12px; font-size:12.5px; font-family:ui-monospace,Menlo,monospace;" placeholder="const firebaseConfig = { apiKey: ... }"></textarea>
+      <div class="sheet-actions" style="margin-top:12px;"><button class="btn btn-secondary" id="fbNo">Cancelar</button><button class="btn btn-primary" id="fbYes">Salvar</button></div>`;
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('fbNo').onclick = closeSheet;
+    document.getElementById('fbYes').onclick = ()=>{
+      const txt = document.getElementById('fbCfgIn').value; const cfg = {};
+      ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'].forEach(k=>{ const m = txt.match(new RegExp(k+'\\s*["\\u0027]?\\s*:\\s*["\\u0027]([^"\\u0027]+)["\\u0027]')); if(m) cfg[k]=m[1]; });
+      if(!cfg.apiKey || !cfg.projectId){ showToast('Não encontrei apiKey e projectId nesse texto.'); return; }
+      lsSetRaw('fb_config', JSON.stringify(cfg));
+      closeSheet();
+      if(!clBoot()) showToast('Sem internet para carregar o Firebase. Tente de novo.');
+    };
+    return;
+  }
+  const fid = fidEnabled();
+  body.innerHTML = `<h2>Conta</h2>
+    <p style="font-size:13.5px; margin-top:-6px;">Conectado como <b>${CL.user.email}</b>. Tudo que você lança é salvo na nuvem.</p>
+    <div class="switch-row"><span class="tx">Desbloquear com Face ID<small>Pede o Face ID ao abrir o app</small></span><button type="button" class="switch${fid?' on':''}" id="swFid" aria-label="Face ID"></button></div>
+    <div class="sheet-actions" style="margin-top:18px;"><button class="btn btn-danger" id="btnSair">Sair da conta</button></div>`;
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('swFid').onclick = async function(){
+    if(fidEnabled()){ lsSetRaw('faceid_cred',''); try{ localStorage.removeItem('faceid_cred'); }catch(e){} this.classList.remove('on'); showToast('Face ID desativado'); }
+    else if(await fidEnable()){ this.classList.add('on'); LOCK.unlocked = true; }
+  };
+  document.getElementById('btnSair').onclick = async ()=>{
+    closeSheet();
+    try{ await firebase.auth().signOut(); }catch(e){}
+    // limpa os dados deste aparelho para a próxima pessoa não ver nada
+    state.lancamentos = []; state.saldosIniciais = {}; state.controleSnapshot = null; setBancos(BANCOS_PADRAO);
+    try{ await window.storage.set('lancamentos_planilha_antiga','[]'); await window.storage.set('saldosIniciais_planilha_antiga','{}'); await window.storage.set('controleSnapshot_planilha_antiga','null'); await window.storage.set('bancos_planilha_antiga', JSON.stringify(BANCOS)); }catch(e){}
+    ['od_item','od_info','faceid_cred','cl_owner'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    populateBancoSelect(); renderPainel(); renderHistorico(); renderExportar(); renderOdCard();
+    showToast('Você saiu da conta');
+  };
+}
+
 /* ============ INIT ============ */
 async function init(){
   populateCategoriaSelect();
   populateBancoSelect();
   document.getElementById('fData').value = todayISO();
   await loadData();
+  populateBancoSelect();
   checarArmazenamento();
   renderPainel();
   document.getElementById('loading').classList.add('hide');
@@ -1607,6 +1998,8 @@ async function init(){
     renderPainel(); renderHistorico(); renderExportar();
   }
   odBoot();
+  clBoot();
+  if(fidEnabled()) showLock(); else LOCK.unlocked = true;
 }
 init();
 </script>
