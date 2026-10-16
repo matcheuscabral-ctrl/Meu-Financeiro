@@ -1018,7 +1018,7 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
     <button type="button" class="btn btn-secondary" id="btnBancos" style="margin-top:10px;">Adicionar ou remover bancos</button>
     <div class="data-box">Guardados neste iPhone: <b>${state.lancamentos.length} lançamento(s)</b>, ${state.lancamentos.filter(l=>l.synced!==true).length} pendente(s).<br>${KV.st.lastSave ? 'Último salvamento: '+hhmm(new Date(KV.st.lastSave).toISOString())+'. ' : ''}${lsGetRaw('ultimo_backup') ? 'Último backup: '+hhmm(lsGetRaw('ultimo_backup'))+'.' : 'Nenhum backup feito ainda.'}</div>
     <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-secondary" id="btnBackup">Salvar backup</button><button class="btn btn-secondary" id="btnRestaurar">Restaurar backup</button></div>
-    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · Face ID no login</p>`;
+    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · Face ID automático</p>`;
   document.getElementById('btnBackup').onclick = salvarBackup;
   document.getElementById('btnBancos').onclick = openBancosSheet;
   const ar = document.getElementById('btnConta'); if(ar) ar.onclick = openContaSheet;
@@ -1872,8 +1872,15 @@ function showAuthGate(){
   const tip = document.getElementById('agTip');
   if(!isStandalone()){ tip.textContent = 'Dica: abra o app pelo ícone na tela de início. Pelo navegador, o iPhone pode esquecer o seu login ao fechar.'; tip.style.display='block'; } else tip.style.display='none';
   document.getElementById('authGate').classList.add('show');
+  if(can && lsGetRaw('faceid_usado')!=='0') tryAutoFace(async()=>{ await fidLogin(); });
 }
 document.getElementById('agFace').onclick = fidLogin;
+let autoFaceTried = false;
+function tryAutoFace(fn){
+  if(autoFaceTried || document.visibilityState!=='visible') return;
+  autoFaceTried = true;
+  setTimeout(()=>{ try{ const p = fn(); if(p && p.catch) p.catch(()=>{}); }catch(e){} }, 350);
+}
 function hideAuthGate(){ document.getElementById('authGate').classList.remove('show'); }
 document.getElementById('agToggle').onclick = ()=> setAgMode(agMode==='login' ? 'signup' : 'login');
 document.getElementById('agForm').addEventListener('submit', async ()=>{
@@ -1901,6 +1908,9 @@ const LOCK = { unlocked:false, hiddenAt:0 };
 function fidEnabled(){ return !!lsGetRaw('faceid_cred'); }
 function b64u(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function fromB64u(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return Uint8Array.from(atob(s), ch=>ch.charCodeAt(0)); }
+function forgetPasskey(idB64){
+  try{ if(idB64 && window.PublicKeyCredential && PublicKeyCredential.signalUnknownCredential) PublicKeyCredential.signalUnknownCredential({rpId:location.hostname, credentialId:idB64}).catch(()=>{}); }catch(e){}
+}
 function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; }
 function hex(u8){ return [...u8].map(x=>x.toString(16).padStart(2,'0')).join(''); }
 async function aesKey(raw){ return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']); }
@@ -1952,7 +1962,9 @@ function fidEnable(){
         const antigo = lsGetRaw('faceid_doc');
         if(antigo){ try{ await CL.db.collection('faceid').doc(antigo).delete(); }catch(e){} }
         await CL.db.collection('faceid').doc(docId).set({ uid:u.uid, iv:b64u(iv), ct:b64u(ct), criadoEm:new Date().toISOString() });
+        const credAntiga = lsGetRaw('faceid_cred');
         lsSetRaw('faceid_cred', b64u(cred.rawId)); lsSetRaw('faceid_doc', docId);
+        if(credAntiga && credAntiga!==b64u(cred.rawId)) forgetPasskey(credAntiga);
         closeSheet(); showToast('Face ID ativado'); resolve(true);
       }catch(e){
         console.log(e);
@@ -1973,11 +1985,11 @@ async function fidLogin(){
     r = await navigator.credentials.get({ publicKey:{ challenge: crypto.getRandomValues(new Uint8Array(32)), rpId: location.hostname, userVerification:'required', timeout:60000 } });
   }catch(e){ console.log(e); if(!(e && e.name==='NotAllowedError')) err.textContent = 'Não deu para usar o Face ID. Entre com e-mail e senha.'; return; }
   const uh = r && r.response && r.response.userHandle ? new Uint8Array(r.response.userHandle) : null;
-  if(!uh || uh.length!==64){ err.textContent = 'Esse Face ID é de uma versão antiga do app. Entre com e-mail e senha e ative o Face ID de novo na sua conta.'; return; }
+  if(!uh || uh.length!==64){ forgetPasskey(b64u(r.rawId)); err.textContent = 'Esse Face ID é de uma versão antiga do app. Entre com e-mail e senha e ative o Face ID de novo na sua conta.'; return; }
   try{
     const docId = hex(uh.slice(0,32)), key = await aesKey(uh.slice(32));
     const d = await CL.db.collection('faceid').doc(docId).get();
-    if(!d.exists){ err.textContent = 'O Face ID foi desativado. Entre com e-mail e senha e ative de novo.'; return; }
+    if(!d.exists){ forgetPasskey(b64u(r.rawId)); err.textContent = 'O Face ID foi desativado. Entre com e-mail e senha e ative de novo.'; return; }
     const v = d.data();
     const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: fromB64u(v.iv)}, key, fromB64u(v.ct));
     const {e, p} = JSON.parse(new TextDecoder().decode(plain));
@@ -2003,6 +2015,7 @@ function showLock(){
   document.getElementById('lgPassBox').style.display = 'none';
   document.getElementById('lgUsePass').style.display = (CL.user ? '' : 'none');
   document.getElementById('lockGate').classList.add('show');
+  tryAutoFace(async()=>{ try{ if(await fidVerify()) unlock(); }catch(e){} });
 }
 function unlock(){ LOCK.unlocked = true; document.getElementById('lockGate').classList.remove('show'); }
 document.getElementById('lgUnlock').onclick = async ()=>{
@@ -2019,7 +2032,7 @@ document.getElementById('lgPassBtn').onclick = async ()=>{
   }catch(e){ err.textContent = authMsg(e); }
 };
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='hidden'){ LOCK.hiddenAt = Date.now(); return; }
+  if(document.visibilityState==='hidden'){ LOCK.hiddenAt = Date.now(); autoFaceTried = false; return; }
   if(fidEnabled() && LOCK.unlocked && LOCK.hiddenAt && Date.now()-LOCK.hiddenAt > 3*60*1000) showLock();
 });
 /* ---- conta (dentro dos ajustes) ---- */
