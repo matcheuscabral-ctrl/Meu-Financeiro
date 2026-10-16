@@ -302,6 +302,9 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 .bmark-sm{width:30px; height:30px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:600; flex:none;}
 .bk-del{background:none; border:1px solid var(--line2); color:var(--mut); border-radius:10px; padding:7px 12px; font-family:inherit; font-size:13px;}
 .bk-del.danger{border-color:var(--red); color:var(--red);}
+.gate-or{display:flex; align-items:center; gap:10px; color:var(--faint); font-size:12.5px; margin:16px 0 14px;}
+.gate-or:before,.gate-or:after{content:''; flex:1; height:1px; background:var(--line);}
+.gate-tip{font-size:12.5px !important; color:var(--faint) !important; margin:22px 0 0 !important; line-height:1.5;}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -452,6 +455,8 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
     <div class="mark">MF</div>
     <h1 id="agTitle">Entre na sua conta</h1>
     <p id="agSub">Seus lançamentos ficam guardados na nuvem e aparecem em qualquer aparelho.</p>
+    <button type="button" class="btn btn-primary" id="agFace" style="display:none; margin-bottom:6px;">Entrar com Face ID</button>
+    <div class="gate-or" id="agOr" style="display:none;"><span>ou entre com e-mail e senha</span></div>
     <form id="agForm" autocomplete="on" onsubmit="return false;">
       <div class="field"><label for="agEmail">E-mail</label><input type="email" id="agEmail" name="email" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <div class="field"><label for="agPass">Senha</label><input type="password" id="agPass" name="password" autocomplete="current-password"></div>
@@ -459,6 +464,7 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
       <button type="submit" class="btn btn-primary" id="agSubmit">Entrar</button>
     </form>
     <div class="gate-links"><button type="button" id="agToggle">Criar conta</button><button type="button" id="agForgot">Esqueci a senha</button></div>
+    <p class="gate-tip" id="agTip" style="display:none;"></p>
   </div>
 </div>
 
@@ -1012,7 +1018,7 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
     <button type="button" class="btn btn-secondary" id="btnBancos" style="margin-top:10px;">Adicionar ou remover bancos</button>
     <div class="data-box">Guardados neste iPhone: <b>${state.lancamentos.length} lançamento(s)</b>, ${state.lancamentos.filter(l=>l.synced!==true).length} pendente(s).<br>${KV.st.lastSave ? 'Último salvamento: '+hhmm(new Date(KV.st.lastSave).toISOString())+'. ' : ''}${lsGetRaw('ultimo_backup') ? 'Último backup: '+hhmm(lsGetRaw('ultimo_backup'))+'.' : 'Nenhum backup feito ainda.'}</div>
     <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-secondary" id="btnBackup">Salvar backup</button><button class="btn btn-secondary" id="btnRestaurar">Restaurar backup</button></div>
-    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · nuvem ligada</p>`;
+    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · Face ID no login</p>`;
   document.getElementById('btnBackup').onclick = salvarBackup;
   document.getElementById('btnBancos').onclick = openBancosSheet;
   const ar = document.getElementById('btnConta'); if(ar) ar.onclick = openContaSheet;
@@ -1858,7 +1864,16 @@ function setAgMode(m){
   document.getElementById('agPass').setAttribute('autocomplete', m==='login' ? 'current-password' : 'new-password');
   document.getElementById('agErr').textContent = '';
 }
-function showAuthGate(){ setAgMode(agMode); document.getElementById('authGate').classList.add('show'); }
+function showAuthGate(){
+  setAgMode(agMode);
+  const can = !!(window.PublicKeyCredential && window.crypto && crypto.subtle);
+  document.getElementById('agFace').style.display = can ? 'block' : 'none';
+  document.getElementById('agOr').style.display = can ? 'flex' : 'none';
+  const tip = document.getElementById('agTip');
+  if(!isStandalone()){ tip.textContent = 'Dica: abra o app pelo ícone na tela de início. Pelo navegador, o iPhone pode esquecer o seu login ao fechar.'; tip.style.display='block'; } else tip.style.display='none';
+  document.getElementById('authGate').classList.add('show');
+}
+document.getElementById('agFace').onclick = fidLogin;
 function hideAuthGate(){ document.getElementById('authGate').classList.remove('show'); }
 document.getElementById('agToggle').onclick = ()=> setAgMode(agMode==='login' ? 'signup' : 'login');
 document.getElementById('agForm').addEventListener('submit', async ()=>{
@@ -1886,21 +1901,93 @@ const LOCK = { unlocked:false, hiddenAt:0 };
 function fidEnabled(){ return !!lsGetRaw('faceid_cred'); }
 function b64u(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function fromB64u(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return Uint8Array.from(atob(s), ch=>ch.charCodeAt(0)); }
-async function fidEnable(){
-  if(!window.PublicKeyCredential || !navigator.credentials){ showToast('Este aparelho não oferece Face ID para o app.'); return false; }
+function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true; }
+function hex(u8){ return [...u8].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function aesKey(raw){ return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']); }
+/* Ativar Face ID: confirma a senha, cria uma chave de acesso (passkey) no app Senhas do iPhone
+   e guarda na nuvem o login criptografado. A chave para abrir esse cofre fica só dentro da passkey,
+   que o iPhone só entrega depois do Face ID. Assim o Face ID funciona mesmo se o iPhone apagar a sessão. */
+function fidEnable(){
+  return new Promise(resolve=>{
+    if(!window.PublicKeyCredential || !navigator.credentials || !window.crypto || !crypto.subtle){ showToast('Este aparelho não oferece Face ID para o app.'); return resolve(false); }
+    const body = document.getElementById('sheetBody');
+    body.innerHTML = `<h2>Ativar Face ID</h2>
+      <p style="font-size:13.5px; line-height:1.55; margin-top:-6px;">Confirme sua senha uma vez. Depois disso, o app entra só com o seu rosto.</p>
+      <div class="field"><label for="fidPass">Senha da conta</label><input type="password" id="fidPass" autocomplete="current-password"></div>
+      <div class="gate-err" id="fidErr"></div>
+      <div class="sheet-actions"><button class="btn btn-secondary" id="fidCancel">Cancelar</button><button class="btn btn-primary" id="fidGo">Ativar</button></div>`;
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('fidCancel').onclick = ()=>{ closeSheet(); resolve(false); };
+    document.getElementById('fidGo').onclick = async ()=>{
+      const pass = document.getElementById('fidPass').value, err = document.getElementById('fidErr');
+      const u = firebase.auth().currentUser;
+      if(!u){ err.textContent = 'Entre na sua conta primeiro.'; return; }
+      try{ await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, pass)); }
+      catch(e){ err.textContent = authMsg(e); return; }
+      const secret = crypto.getRandomValues(new Uint8Array(64)); // 32 bytes = endereço do cofre, 32 bytes = chave
+      const docId = hex(secret.slice(0,32)), key = await aesKey(secret.slice(32));
+      let cred;
+      try{
+        cred = await navigator.credentials.create({ publicKey:{
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name:'Meu Financeiro', id: location.hostname },
+          user: { id: secret, name: u.email, displayName: 'Meu Financeiro' },
+          pubKeyCredParams: [{type:'public-key', alg:-7}, {type:'public-key', alg:-257}],
+          authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required', residentKey:'required', requireResidentKey:true },
+          timeout: 60000, attestation:'none'
+        }});
+      }catch(e){
+        console.log(e);
+        if(e && e.name==='NotAllowedError'){ closeSheet(); showToast('Face ID não foi ativado.'); return resolve(false); }
+        body.innerHTML = `<h2>Face ID não foi ativado</h2>
+          <p style="font-size:13.5px; line-height:1.6;">O iPhone tentou guardar a chave do app em outro aplicativo de senhas (por exemplo, o Microsoft Authenticator), que não aceita esse tipo de chave.</p>
+          <p style="font-size:13.5px; line-height:1.6;">Vá em <b>Ajustes › Geral › Preenchimento Automático e Senhas</b>, ligue <b>Senhas</b> e desligue o <b>Authenticator</b>. Depois tente de novo e, se perguntar onde salvar, escolha <b>Senhas</b>.</p>
+          <div class="sheet-actions"><button class="btn btn-primary" id="fidOk">Entendi</button></div>`;
+        document.getElementById('fidOk').onclick = closeSheet;
+        return resolve(false);
+      }
+      try{
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify({e:u.email, p:pass})));
+        const antigo = lsGetRaw('faceid_doc');
+        if(antigo){ try{ await CL.db.collection('faceid').doc(antigo).delete(); }catch(e){} }
+        await CL.db.collection('faceid').doc(docId).set({ uid:u.uid, iv:b64u(iv), ct:b64u(ct), criadoEm:new Date().toISOString() });
+        lsSetRaw('faceid_cred', b64u(cred.rawId)); lsSetRaw('faceid_doc', docId);
+        closeSheet(); showToast('Face ID ativado'); resolve(true);
+      }catch(e){
+        console.log(e);
+        document.getElementById('sheetBody').innerHTML = `<h2>Falta um ajuste no Firebase</h2>
+          <p style="font-size:13.5px; line-height:1.6;">O Face ID foi criado, mas a nuvem recusou guardar o acesso. Atualize as <b>Regras</b> do Firestore com o texto que o Claude te mandou e tente de novo.</p>
+          <div class="sheet-actions"><button class="btn btn-primary" id="fidOk">Entendi</button></div>`;
+        document.getElementById('overlay').classList.add('show');
+        document.getElementById('fidOk').onclick = closeSheet;
+        resolve(false);
+      }
+    };
+  });
+}
+async function fidLogin(){
+  const err = document.getElementById('agErr'); err.textContent = '';
+  let r;
   try{
-    const cred = await navigator.credentials.create({ publicKey:{
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name:'Meu Financeiro', id: location.hostname },
-      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: (CL.user && CL.user.email) || 'meu-financeiro', displayName: 'Meu Financeiro' },
-      pubKeyCredParams: [{type:'public-key', alg:-7}, {type:'public-key', alg:-257}],
-      authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required', residentKey:'preferred' },
-      timeout: 60000, attestation:'none'
-    }});
-    lsSetRaw('faceid_cred', b64u(cred.rawId));
-    showToast('Face ID ativado');
-    return true;
-  }catch(e){ console.log(e); showToast('Face ID não foi ativado.'); return false; }
+    r = await navigator.credentials.get({ publicKey:{ challenge: crypto.getRandomValues(new Uint8Array(32)), rpId: location.hostname, userVerification:'required', timeout:60000 } });
+  }catch(e){ console.log(e); if(!(e && e.name==='NotAllowedError')) err.textContent = 'Não deu para usar o Face ID. Entre com e-mail e senha.'; return; }
+  const uh = r && r.response && r.response.userHandle ? new Uint8Array(r.response.userHandle) : null;
+  if(!uh || uh.length!==64){ err.textContent = 'Esse Face ID é de uma versão antiga do app. Entre com e-mail e senha e ative o Face ID de novo na sua conta.'; return; }
+  try{
+    const docId = hex(uh.slice(0,32)), key = await aesKey(uh.slice(32));
+    const d = await CL.db.collection('faceid').doc(docId).get();
+    if(!d.exists){ err.textContent = 'O Face ID foi desativado. Entre com e-mail e senha e ative de novo.'; return; }
+    const v = d.data();
+    const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: fromB64u(v.iv)}, key, fromB64u(v.ct));
+    const {e, p} = JSON.parse(new TextDecoder().decode(plain));
+    LOCK.unlocked = true;
+    await firebase.auth().signInWithEmailAndPassword(e, p);
+    lsSetRaw('faceid_cred', b64u(r.rawId)); lsSetRaw('faceid_doc', docId);
+  }catch(e){
+    console.log(e);
+    err.textContent = (e && /invalid-credential|wrong-password/.test(e.code||'')) ? 'Sua senha mudou. Entre com e-mail e senha e ative o Face ID de novo.' : (e && e.code==='permission-denied' ? 'Atualize as Regras do Firestore (o Claude te mandou o texto).' : authMsg(e));
+  }
 }
 async function fidVerify(){
   const id = lsGetRaw('faceid_cred'); if(!id) return true;
@@ -1968,8 +2055,11 @@ function openContaSheet(){
     <div class="sheet-actions" style="margin-top:18px;"><button class="btn btn-danger" id="btnSair">Sair da conta</button></div>`;
   document.getElementById('overlay').classList.add('show');
   document.getElementById('swFid').onclick = async function(){
-    if(fidEnabled()){ lsSetRaw('faceid_cred',''); try{ localStorage.removeItem('faceid_cred'); }catch(e){} this.classList.remove('on'); showToast('Face ID desativado'); }
-    else if(await fidEnable()){ this.classList.add('on'); LOCK.unlocked = true; }
+    if(fidEnabled()){
+      const doc = lsGetRaw('faceid_doc'); if(doc){ try{ await CL.db.collection('faceid').doc(doc).delete(); }catch(e){} }
+      ['faceid_cred','faceid_doc'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+      this.classList.remove('on'); showToast('Face ID desativado');
+    } else if(await fidEnable()){ LOCK.unlocked = true; openContaSheet(); }
   };
   document.getElementById('btnSair').onclick = async ()=>{
     closeSheet();
@@ -1977,7 +2067,7 @@ function openContaSheet(){
     // limpa os dados deste aparelho para a próxima pessoa não ver nada
     state.lancamentos = []; state.saldosIniciais = {}; state.controleSnapshot = null; setBancos(BANCOS_PADRAO);
     try{ await window.storage.set('lancamentos_planilha_antiga','[]'); await window.storage.set('saldosIniciais_planilha_antiga','{}'); await window.storage.set('controleSnapshot_planilha_antiga','null'); await window.storage.set('bancos_planilha_antiga', JSON.stringify(BANCOS)); }catch(e){}
-    ['od_item','od_info','faceid_cred','cl_owner'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    ['od_item','od_info','faceid_cred','faceid_doc','cl_owner'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     populateBancoSelect(); renderPainel(); renderHistorico(); renderExportar(); renderOdCard();
     showToast('Você saiu da conta');
   };
