@@ -305,6 +305,25 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
 .gate-or{display:flex; align-items:center; gap:10px; color:var(--faint); font-size:12.5px; margin:16px 0 14px;}
 .gate-or:before,.gate-or:after{content:''; flex:1; height:1px; background:var(--line);}
 .gate-tip{font-size:12.5px !important; color:var(--faint) !important; margin:22px 0 0 !important; line-height:1.5;}
+
+.search-box{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:0 14px;}
+.search-box svg{width:18px; height:18px; stroke:var(--faint); fill:none; stroke-width:1.8; flex:none;}
+.search-box input{flex:1; min-width:0; border:none; background:transparent; color:var(--text); font-family:inherit; font-size:16px; padding:13px 0; outline:none; -webkit-appearance:none;}
+.search-box input::placeholder{color:var(--faint);}
+#hPeriodo .seg-btn{font-size:13.5px; padding:10px 4px;}
+#hNav{margin-top:12px;}
+.filter-row{display:flex; gap:8px; margin-top:12px; overflow-x:auto; padding-bottom:2px;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-row select{flex:none; max-width:46%; appearance:none; -webkit-appearance:none; background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C9E97' stroke-width='2.4'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 10px center; border:1px solid var(--line); border-radius:999px; color:var(--text); font-family:inherit; font-size:13.5px; padding:8px 28px 8px 13px; white-space:nowrap; text-overflow:ellipsis;}
+.filter-row select.on{border-color:var(--champ); color:var(--champ);}
+.hist-sum{display:grid; grid-template-columns:repeat(3,1fr); background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); margin:14px 0 4px;}
+.hist-sum > div{padding:11px 12px; border-right:1px solid var(--line);}
+.hist-sum > div:last-child{border-right:none;}
+.hist-sum .l{font-size:12px; color:var(--mut);} .hist-sum .v{font-size:14.5px; font-weight:500; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.hist-month{font-size:15px; font-weight:600; letter-spacing:-.01em; margin:26px 0 0; color:var(--text);}
+.hist-month + .hist-day{margin-top:8px;}
+.hist-more{display:block; width:100%; margin:16px 0 0; background:none; border:1px solid var(--line2); border-radius:12px; color:var(--mut); font-family:inherit; font-size:14px; padding:12px;}
+mark{background:var(--gold-lt); color:inherit; border-radius:3px; padding:0 1px;}
 @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -382,13 +401,30 @@ textarea#exportPreview{width:100%; min-height:140px; border-radius:var(--r-md); 
     <section class="screen" id="screen-historico">
       <div class="topbar">
         <h1>Histórico</h1>
-        <div class="month-nav">
-          <button id="hPrev" aria-label="Mês anterior">‹</button>
-          <div class="mlabel" id="hLabel">Junho 2026</div>
-          <button id="hNext" aria-label="Próximo mês">›</button>
-        </div>
       </div>
-      <div class="content" id="histContent"></div>
+      <div class="content" style="padding-top:10px;">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input type="search" id="hBusca" placeholder="Buscar descrição, categoria, banco ou valor" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="seg" id="hPeriodo" style="grid-template-columns:repeat(3,1fr); margin:12px 0 0;">
+          <button class="seg-btn active" data-p="mes">Mês</button>
+          <button class="seg-btn" data-p="ano">Ano inteiro</button>
+          <button class="seg-btn" data-p="tudo">Tudo</button>
+        </div>
+        <div class="month-nav" id="hNav">
+          <button id="hPrev" aria-label="Anterior">‹</button>
+          <div class="mlabel" id="hLabel">Junho 2026</div>
+          <button id="hNext" aria-label="Próximo">›</button>
+        </div>
+        <div class="filter-row">
+          <select id="hTipo" aria-label="Tipo"><option value="">Todos os tipos</option><option value="Saída">Saídas</option><option value="Entrada">Entradas</option><option value="Investimento">Investido</option><option value="transf">Transferências</option><option value="pend">Só pendentes</option></select>
+          <select id="hBanco" aria-label="Banco"></select>
+          <select id="hCat" aria-label="Categoria"></select>
+        </div>
+        <div class="hist-sum" id="hSum"></div>
+        <div id="histContent"></div>
+      </div>
     </section>
 
     <!-- ===== SINCRONIZAR ===== -->
@@ -676,6 +712,7 @@ function populateBancoSelect(){
   const dest = document.getElementById('fBancoDest');
   if(dest){ dest.innerHTML = BANCOS.map(b=>`<option value="${b}">${bankLabel(b)}</option>`).join(''); dest.value = BANCOS[1] || BANCOS[0]; }
 }
+const DESC_TRANSF = 'Transferência Bancaria';
 const CAT_TRANSF_SAI = (CATEGORIAS.find(c=>c[1]==='Saída' && /^Transfer/i.test(c[0]))||['Transferência de Bancos - Saí'])[0];
 const CAT_TRANSF_ENTRA = (CATEGORIAS.find(c=>c[1]==='Entrada' && /^Transfer/i.test(c[0]))||['Transferência de Bancos - Entra'])[0];
 function isTransferMode(){ return state.formTipo==='Transferência'; }
@@ -685,6 +722,9 @@ function updateFormMode(){
   document.getElementById('rowBancoDest').style.display = t ? '' : 'none';
   document.getElementById('lblBanco').textContent = t ? 'De' : 'Conta';
   document.getElementById('btnSalvar').textContent = t ? 'Salvar transferência' : 'Salvar lançamento';
+  const desc = document.getElementById('fDescricao');
+  if(t && !desc.value.trim()) desc.value = DESC_TRANSF;
+  if(!t && desc.value===DESC_TRANSF) desc.value = '';
   if(t){
     const o = document.getElementById('fBanco'), d = document.getElementById('fBancoDest');
     if(d.value===o.value){ d.value = BANCOS[(BANCOS.indexOf(o.value)+1)%BANCOS.length]; }
@@ -715,14 +755,15 @@ document.getElementById('btnSalvar').addEventListener('click', async ()=>{
   if(isTransferMode()){
     const destino = document.getElementById('fBancoDest').value;
     if(destino===banco){ showToast('Escolha contas diferentes em De e Para.'); return; }
+    const descT = descricao || DESC_TRANSF;
     const base = Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     state.lancamentos.push(
-      { id: base+'a', transferId: base, date:data, tipo:'Saída',   categoria:CAT_TRANSF_SAI,   banco,          descricao, valor, synced:false, source:'app' },
-      { id: base+'b', transferId: base, date:data, tipo:'Entrada', categoria:CAT_TRANSF_ENTRA, banco:destino,  descricao, valor, synced:false, source:'app' }
+      { id: base+'a', transferId: base, date:data, tipo:'Saída',   categoria:CAT_TRANSF_SAI,   banco,          descricao:descT, valor, synced:false, source:'app' },
+      { id: base+'b', transferId: base, date:data, tipo:'Entrada', categoria:CAT_TRANSF_ENTRA, banco:destino,  descricao:descT, valor, synced:false, source:'app' }
     );
     await persistLancamentos();
     document.getElementById('fValor').value='';
-    document.getElementById('fDescricao').value='';
+    document.getElementById('fDescricao').value=DESC_TRANSF;
     try{ renderPainel(); renderHistorico(); renderExportar(); }catch(e){}
     showToast(`Transferência salva: ${bankLabel(banco)} → ${bankLabel(destino)}`);
     navigator.vibrate && navigator.vibrate(15);
@@ -1018,7 +1059,7 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
     <button type="button" class="btn btn-secondary" id="btnBancos" style="margin-top:10px;">Adicionar ou remover bancos</button>
     <div class="data-box">Guardados neste iPhone: <b>${state.lancamentos.length} lançamento(s)</b>, ${state.lancamentos.filter(l=>l.synced!==true).length} pendente(s).<br>${KV.st.lastSave ? 'Último salvamento: '+hhmm(new Date(KV.st.lastSave).toISOString())+'. ' : ''}${lsGetRaw('ultimo_backup') ? 'Último backup: '+hhmm(lsGetRaw('ultimo_backup'))+'.' : 'Nenhum backup feito ainda.'}</div>
     <div class="sheet-actions" style="margin-top:0;"><button class="btn btn-secondary" id="btnBackup">Salvar backup</button><button class="btn btn-secondary" id="btnRestaurar">Restaurar backup</button></div>
-    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · Face ID automático</p>`;
+    <p style="text-align:center; font-size:11px; color:var(--mut); margin-top:10px;">Versão do app: v15/10 · busca no histórico</p>`;
   document.getElementById('btnBackup').onclick = salvarBackup;
   document.getElementById('btnBancos').onclick = openBancosSheet;
   const ar = document.getElementById('btnConta'); if(ar) ar.onclick = openContaSheet;
@@ -1048,40 +1089,112 @@ document.getElementById('btnAjustes').addEventListener('click', ()=>{
 });
 
 /* ============ HISTÓRICO ============ */
+const HF = { periodo:'mes', ano:null, q:'', tipo:'', banco:'', cat:'', limite:150 };
+function normTxt(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function escHtml(s){ return String(s||'').replace(/[&<>"]/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+function realcar(txt, q){
+  const t = escHtml(txt); if(!q) return t;
+  const n = normTxt(txt), i = n.indexOf(q); if(i<0) return t;
+  const raw = String(txt); return escHtml(raw.slice(0,i))+'<mark>'+escHtml(raw.slice(i,i+q.length))+'</mark>'+escHtml(raw.slice(i+q.length));
+}
+function fillHistFilters(){
+  const bancos = [...new Set([...BANCOS, ...state.lancamentos.map(l=>l.banco).filter(Boolean)])];
+  const cats = [...new Set(state.lancamentos.map(l=>l.categoria).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'pt-BR'));
+  const sb = document.getElementById('hBanco'), sc = document.getElementById('hCat');
+  sb.innerHTML = '<option value="">Todos os bancos</option>'+bancos.map(b=>`<option value="${escHtml(b)}">${escHtml(bankLabel(b))}</option>`).join('');
+  sc.innerHTML = '<option value="">Todas as categorias</option>'+cats.map(x=>`<option value="${escHtml(x)}">${escHtml(x)}</option>`).join('');
+  sb.value = bancos.includes(HF.banco) ? HF.banco : ''; HF.banco = sb.value;
+  sc.value = cats.includes(HF.cat) ? HF.cat : ''; HF.cat = sc.value;
+  document.getElementById('hTipo').value = HF.tipo;
+  ['hTipo','hBanco','hCat'].forEach(id=>{ const el=document.getElementById(id); el.classList.toggle('on', !!el.value); });
+}
+function histFiltrados(){
+  const q = normTxt(HF.q.trim());
+  return state.lancamentos.filter(l=>{
+    if(HF.periodo==='mes' && ymOf(l.date)!==state.histMonth) return false;
+    if(HF.periodo==='ano' && String(l.date).slice(0,4)!==String(HF.ano)) return false;
+    if(HF.tipo==='transf'){ if(!l.transferId && !/^transfer/i.test(normTxt(l.categoria))) return false; }
+    else if(HF.tipo==='pend'){ if(l.synced===true) return false; }
+    else if(HF.tipo && l.tipo!==HF.tipo) return false;
+    if(HF.banco && l.banco!==HF.banco) return false;
+    if(HF.cat && l.categoria!==HF.cat) return false;
+    if(q){
+      const valor = normTxt(fmtMoney(l.valor).replace('R$','')) + ' ' + String(l.valor).replace('.',',');
+      const alvo = normTxt([l.descricao, l.categoria, l.banco, bankLabel(l.banco)].join(' ')) + ' ' + valor;
+      if(!alvo.includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=> b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
+}
 function renderHistorico(){
   if(!state.histMonth) state.histMonth = todayISO().slice(0,7);
-  document.getElementById('hLabel').textContent = fmtMonthLabel(state.histMonth);
-  const items = state.lancamentos.filter(l=>ymOf(l.date)===state.histMonth).sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  if(!HF.ano) HF.ano = parseInt(state.histMonth.slice(0,4),10);
+  fillHistFilters();
+  document.querySelectorAll('#hPeriodo .seg-btn').forEach(b=> b.classList.toggle('active', b.dataset.p===HF.periodo));
+  const nav = document.getElementById('hNav');
+  nav.style.display = HF.periodo==='tudo' ? 'none' : 'inline-flex';
+  document.getElementById('hLabel').textContent = HF.periodo==='ano' ? String(HF.ano) : fmtMonthLabel(state.histMonth);
+
+  const items = histFiltrados();
+  const ent = items.filter(l=>l.tipo==='Entrada').reduce((s,l)=>s+l.valor,0);
+  const sai = items.filter(l=>l.tipo!=='Entrada').reduce((s,l)=>s+l.valor,0);
+  document.getElementById('hSum').innerHTML = `<div><div class="l">Lançamentos</div><div class="v num">${items.length}</div></div>
+    <div><div class="l">Entradas</div><div class="v num" style="color:var(--green)">${fmtMoney(ent)}</div></div>
+    <div><div class="l">Saídas</div><div class="v num" style="color:var(--red)">${fmtMoney(sai)}</div></div>`;
+
   const wrap = document.getElementById('histContent');
   if(items.length===0){
-    wrap.innerHTML = `<div class="empty"><div class="ic"></div><p>Nenhum lançamento neste mês.<br>Use a aba Lançar para registrar o primeiro.</p></div>`;
+    const filtrando = HF.q || HF.tipo || HF.banco || HF.cat;
+    wrap.innerHTML = `<div class="empty"><div class="ic"></div><p>${filtrando ? 'Nada encontrado com esses filtros.<br>Tente outro período ou limpe a busca.' : (HF.periodo==='mes' ? 'Nenhum lançamento neste mês.<br>Use a aba Lançar para registrar o primeiro.' : 'Nenhum lançamento neste período.')}</p></div>`;
     return;
   }
-  const groups = {};
-  items.forEach(i=>{ (groups[i.date] = groups[i.date]||[]).push(i); });
+  const q = normTxt(HF.q.trim());
   const colorFor = {'Entrada':'var(--green)','Saída':'var(--red)','Investimento':'var(--blue)','Empréstimo':'var(--gold)'};
   const bgFor = {'Entrada':'var(--green-lt)','Saída':'var(--red-lt)','Investimento':'var(--blue-lt)','Empréstimo':'var(--gold-lt)'};
-  let html = '';
-  Object.keys(groups).sort().reverse().forEach(date=>{
-    const d = new Date(date+'T12:00:00');
-    html += `<div class="hist-day">${d.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'})}</div>`;
-    groups[date].forEach(i=>{
-      const sign = i.tipo==='Entrada' ? '+' : '-';
-      const statusBadge = i.synced ? `<span style="color:var(--faint);">Na planilha</span>` : `<span style="color:var(--gold);">Pendente</span>`;
-      html += `<div class="hist-item" data-id="${i.id}">
-        <div class="dot" style="background:${bgFor[i.tipo]}; color:${colorFor[i.tipo]}">${monogram(i.categoria)}</div>
-        <div class="mid"><div class="t1">${i.categoria}</div><div class="t2">${statusBadge}  ·  ${bankLabel(i.banco)}${i.descricao? '  ·  '+i.descricao : ''}</div></div>
-        <div class="val num" style="color:${i.tipo==='Entrada'?'var(--green)':'var(--text)'}">${sign==='+'?'+':'−'} ${fmtMoney(i.valor)}</div>
-      </div>`;
-    });
+  const mostrar = items.slice(0, HF.limite);
+  let html = '', mesAtual = '', diaAtual = '';
+  mostrar.forEach(i=>{
+    const ym = ymOf(i.date);
+    if(HF.periodo!=='mes' && ym!==mesAtual){ mesAtual = ym; html += `<div class="hist-month">${fmtMonthLabel(ym)}</div>`; diaAtual=''; }
+    if(i.date!==diaAtual){
+      diaAtual = i.date;
+      const d = new Date(i.date+'T12:00:00');
+      html += `<div class="hist-day">${d.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'})}</div>`;
+    }
+    const sign = i.tipo==='Entrada' ? '+' : '−';
+    const statusBadge = i.synced ? `<span style="color:var(--faint);">Na planilha</span>` : `<span style="color:var(--gold);">Pendente</span>`;
+    html += `<div class="hist-item" data-id="${escHtml(i.id)}">
+      <div class="dot" style="background:${bgFor[i.tipo]||'var(--surface2)'}; color:${colorFor[i.tipo]||'var(--text)'}">${monogram(i.categoria)}</div>
+      <div class="mid"><div class="t1">${realcar(i.categoria,q)}</div><div class="t2">${statusBadge}  ·  ${realcar(bankLabel(i.banco),q)}${i.descricao? '  ·  '+realcar(i.descricao,q) : ''}</div></div>
+      <div class="val num" style="color:${i.tipo==='Entrada'?'var(--green)':'var(--text)'}">${sign} ${fmtMoney(i.valor)}</div>
+    </div>`;
   });
+  if(items.length > mostrar.length) html += `<button type="button" class="hist-more" id="hMais">Mostrar mais ${Math.min(150, items.length-mostrar.length)} de ${items.length-mostrar.length} restantes</button>`;
   wrap.innerHTML = html;
-  wrap.querySelectorAll('.hist-item').forEach(el=>{
-    el.addEventListener('click', ()=> openEditSheet(el.dataset.id));
-  });
+  wrap.querySelectorAll('.hist-item').forEach(el=> el.addEventListener('click', ()=> openEditSheet(el.dataset.id)));
+  const mais = document.getElementById('hMais'); if(mais) mais.onclick = ()=>{ HF.limite += 150; renderHistorico(); };
 }
-document.getElementById('hPrev').addEventListener('click', ()=>{ state.histMonth = shiftMonth(state.histMonth,-1); renderHistorico(); });
-document.getElementById('hNext').addEventListener('click', ()=>{ state.histMonth = shiftMonth(state.histMonth,1); renderHistorico(); });
+document.getElementById('hPrev').addEventListener('click', ()=>{ if(HF.periodo==='ano') HF.ano--; else state.histMonth = shiftMonth(state.histMonth,-1); HF.limite=150; renderHistorico(); });
+document.getElementById('hNext').addEventListener('click', ()=>{ if(HF.periodo==='ano') HF.ano++; else state.histMonth = shiftMonth(state.histMonth,1); HF.limite=150; renderHistorico(); });
+document.getElementById('hPeriodo').addEventListener('click', e=>{
+  const b = e.target.closest('.seg-btn'); if(!b) return;
+  HF.periodo = b.dataset.p; HF.limite = 150;
+  if(HF.periodo==='ano') HF.ano = parseInt(state.histMonth.slice(0,4),10);
+  renderHistorico();
+});
+let buscaTimer;
+document.getElementById('hBusca').addEventListener('input', e=>{
+  clearTimeout(buscaTimer);
+  buscaTimer = setTimeout(()=>{
+    const antes = HF.q; HF.q = e.target.value; HF.limite = 150;
+    // ao começar a buscar no mês, amplia para o ano inteiro para achar transações passadas
+    if(!antes && HF.q && HF.periodo==='mes'){ HF.periodo='tudo'; }
+    renderHistorico();
+  }, 180);
+});
+['hTipo','hBanco','hCat'].forEach(id=> document.getElementById(id).addEventListener('change', e=>{
+  HF[{hTipo:'tipo',hBanco:'banco',hCat:'cat'}[id]] = e.target.value; HF.limite = 150; renderHistorico();
+}));
 
 function openEditSheet(id){
   const item = state.lancamentos.find(l=>l.id===id); if(!item) return;
